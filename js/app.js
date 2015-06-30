@@ -385,6 +385,26 @@
 
 }).call(this);
 
+(function() {
+  angular.module('songaday').filter('length', function() {
+    return function(item) {
+      return Object.keys(item || {}).length;
+    };
+  });
+
+}).call(this);
+
+(function() {
+  angular.module('songaday').filter('trust', function($sce) {
+    return function(url) {
+      if (url) {
+        return $sce.trustAsResourceUrl(url);
+      }
+    };
+  });
+
+}).call(this);
+
 
 /*
 A simple example service that returns some data.
@@ -569,26 +589,6 @@ A simple example service that returns some data.
     n = typeof n !== 'undefined' ? n : 1;
     return this[this.length - n];
   };
-
-}).call(this);
-
-(function() {
-  angular.module('songaday').filter('length', function() {
-    return function(item) {
-      return Object.keys(item || {}).length;
-    };
-  });
-
-}).call(this);
-
-(function() {
-  angular.module('songaday').filter('trust', function($sce) {
-    return function(url) {
-      if (url) {
-        return $sce.trustAsResourceUrl(url);
-      }
-    };
-  });
 
 }).call(this);
 
@@ -965,6 +965,34 @@ A simple example service that returns some data.
 
 }).call(this);
 
+
+/*
+A simple example service that returns some data.
+ */
+
+(function() {
+  angular.module("songaday").factory("BetaService", function($firebaseArray, Auth, FBURL) {
+    var ref;
+    ref = new Firebase(FBURL + 'beta');
+    return {
+      addMe: function() {
+        console.log('MASD');
+        return Auth.$waitForAuth().then(function(authObject) {
+          var betas;
+          if (typeof authObject.google.email !== 'undefined') {
+            betas = $firebaseArray(ref);
+            console.log('MASD');
+            betas.$add(authObject.google.email);
+            betas.$save();
+            return alert('Check your' + authObject.google.email + ' email tommorow ;)');
+          }
+        });
+      }
+    };
+  });
+
+}).call(this);
+
 (function() {
   angular.module("songaday").controller("PlayerCtrl", function($scope, $stateParams, SongService) {
     $scope.next(function() {
@@ -1133,7 +1161,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("RecordCtrl", function($rootScope, $scope, $state, SongService, $window, AccountService, $stateParams, TransmitService, AudioContextService, RecordService, MultiTrackService, AudioVisualizerService) {
+  angular.module("songaday").controller("RecordCtrl", function($rootScope, $scope, $state, SongService, $window, AccountService, $stateParams, TransmitService, AudioContextService, RecordService, MultiTrackService, $ionicModal, BetaService, AudioVisualizerService) {
     var __log, audio_context, captureError, captureSuccess, export_wav, fetchFile, rec_ctrl, recorder, reset, startUserMedia;
     rec_ctrl = this;
     audio_context = {};
@@ -1157,6 +1185,16 @@ A simple example service that returns some data.
         return $scope.transmitted = true;
       }
     });
+    $ionicModal.fromTemplateUrl('templates/record-help-modal.html', {
+      scope: $scope,
+      animation: 'slide-in-up'
+    }).then(function(modal) {
+      $scope.modal = modal;
+      return console.log(modal);
+    });
+    $scope.joinBeta = function() {
+      return BetaService.addMe();
+    };
     $scope.transmit = function() {
       __log('Uploading Compressed Audio');
       return AccountService.refresh(function(myself) {
@@ -1230,19 +1268,26 @@ A simple example service that returns some data.
       var file_protocol;
       $window.file = mediaFiles[0];
       file_protocol = "file://";
+      console.log($window.file, 'MEOW');
       return $window.resolveLocalFileSystemURI(file_protocol + file.fullPath, function(obj) {
         var file_URI;
         $rootScope["native"] = true;
         file_URI = obj.nativeURL;
-        console.log(obj, 'file object');
         return obj.file(function(file_obj) {
-          console.log(obj, 'file');
-          $rootScope.wav_file_uri = file_URI;
-          $rootScope.file_blob = file_obj;
-          console.log(file_obj);
-          $rootScope.file_type = "audio/m4a";
-          $rootScope.readyToTransmit = true;
-          return $scope.$apply();
+          var reader;
+          reader = new FileReader;
+          reader.onload = function(evt) {
+            var file_type;
+            file_type = "audio/m4a";
+            $rootScope.file_blob = new Blob([new Uint8Array(this.result)], {
+              type: file_type
+            });
+            $rootScope.file_type = file_type;
+            $rootScope.wav_file_uri = file_URI;
+            $rootScope.readyToTransmit = true;
+            $scope.$apply();
+          };
+          return reader.readAsArrayBuffer(file_obj);
         });
       });
     };
@@ -1258,9 +1303,25 @@ A simple example service that returns some data.
         limit: 1
       });
     };
+    startUserMedia = function(stream) {
+      var input;
+      input = audio_context.createMediaStreamSource(stream);
+      __log('Media stream created.');
+      __log('input sample rate ' + input.context.sampleRate);
+      recorder = new RecordService.Recorder(input);
+      __log(recorder);
+      __log('Recorder initialised.');
+    };
+    $scope.showModal = function() {
+      return alert('s');
+    };
     $scope.tryHTML5Recording = function() {
       __log('init html5 recording');
       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+      if (typeof navigator.getUserMedia === 'undefined') {
+        $scope.recording_not_supported = true;
+        return;
+      }
       window.URL = window.URL || window.webkitURL;
       audio_context = AudioContextService.getContext();
       __log('Audio context...');
@@ -1270,15 +1331,6 @@ A simple example service that returns some data.
       }, startUserMedia, function(e) {
         __log('No live audio input: ' + e);
       });
-    };
-    startUserMedia = function(stream) {
-      var input;
-      input = audio_context.createMediaStreamSource(stream);
-      __log('Media stream created.');
-      __log('input sample rate ' + input.context.sampleRate);
-      recorder = new RecordService.Recorder(input);
-      __log(recorder);
-      __log('Recorder initialised.');
     };
     export_wav = function() {
       return recorder && recorder.exportWAV(function(blob) {
@@ -1325,7 +1377,7 @@ A simple example service that returns some data.
       $scope.startNativeRecording();
       $rootScope.file_blob = void 0;
       $rootScope.wav_file_uri = void 0;
-      return $rootScope.file_ext = "m4a";
+      return $rootScope.file_ext = "wav";
     }
   });
 
@@ -1754,6 +1806,8 @@ A simple example service that returns some data.
           'signature': 'r+Ci1HbYn4fkyFB0pxwRWx5m0Ss=',
           'key': 'AKIAJ7K34ZKXEV72GYRQ'
         };
+        console.log(file_ext);
+        blob.type = 'audio/' + file_ext;
         key = s3Options.folder + (new Date()).getTime() + '-' + S3Uploader.randomString(16) + '.' + file_ext;
         opts = angular.extend({
           submitOnChange: true,
