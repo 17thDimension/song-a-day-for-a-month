@@ -565,6 +565,14 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
+  Array.prototype.last = function(n) {
+    n = typeof n !== 'undefined' ? n : 1;
+    return this[this.length - n];
+  };
+
+}).call(this);
+
+(function() {
   angular.module('songaday').filter('length', function() {
     return function(item) {
       return Object.keys(item || {}).length;
@@ -578,115 +586,6 @@ A simple example service that returns some data.
     return function(url) {
       if (url) {
         return $sce.trustAsResourceUrl(url);
-      }
-    };
-  });
-
-}).call(this);
-
-(function() {
-  Array.prototype.last = function(n) {
-    n = typeof n !== 'undefined' ? n : 1;
-    return this[this.length - n];
-  };
-
-}).call(this);
-
-(function() {
-
-
-}).call(this);
-
-(function() {
-  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, AccountService, SongService, TransmitService) {
-    console.log('ACCOUNT');
-    $scope.awsParamsURI = TransmitService.awsParamsURI();
-    $scope.awsFolder = TransmitService.awsFolder();
-    $scope.s3Bucket = TransmitService.s3Bucket();
-    AccountService.refresh(function(myself) {
-      $scope.me = myself;
-      myself.$bindTo($scope, 'me');
-      return $scope.songs = SongService.getList($scope.me.songs);
-    });
-    return $scope.propogate = function() {
-      var i, len, ref, results, song;
-      ref = $scope.songs;
-      results = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        song = ref[i];
-        song.artist.alias = $scope.me.alias;
-        song.artist.avatar = $scope.me.avatar;
-        results.push(song.$save());
-      }
-      return results;
-    };
-  });
-
-}).call(this);
-
-
-/*
-A simple example service that returns some data.
- */
-
-(function() {
-  angular.module("songaday").factory("AccountService", function($rootScope, $firebaseArray, $firebaseObject, Auth, FBURL) {
-    var loading, me, ref;
-    ref = new Firebase(FBURL);
-    loading = true;
-    me = {};
-    return {
-      loggedIn: function() {
-        return console.log(auth);
-      },
-      refresh: function(cb) {
-        return Auth.$waitForAuth().then(function(authObject) {
-          var my_id;
-          if (authObject === null || typeof authObject.google === 'undefined') {
-            console.log("NOT LOGGED IN");
-            return;
-          }
-          my_id = CryptoJS.SHA1(authObject.google.email).toString().substring(0, 11);
-          me = $firebaseObject(ref.child('artists/' + my_id));
-          $rootScope.notifications = $firebaseArray(ref.child('notices/' + my_id));
-          $rootScope.notifications.$loaded(function() {
-            return console.log($rootScope.notifications);
-          });
-          return me.$loaded(function() {
-            console.log(me);
-            return cb(me);
-          });
-        });
-      },
-      mySelf: function() {
-        return me;
-      },
-      remove_song: function(song, cb) {
-        var last_song_ref, last_song_uri, song_ref, song_uri;
-        song_uri = FBURL + '/artists/' + me.$id + '/songs/' + song.$id;
-        last_song_uri = FBURL + '/artists/' + me.$id + '/last_transmission/';
-        song_ref = new Firebase(song_uri);
-        last_song_ref = new Firebase(last_song_uri);
-        song_ref.remove();
-        last_song_ref.remove();
-        song.$remove();
-        return cb();
-      },
-      logout: function() {
-        return Auth.$unauth();
-      },
-      login: function() {
-        var provider;
-        provider = 'google';
-        return Auth.$authWithOAuthPopup(provider, {
-          scope: "email"
-        }).then((function(authObject) {
-          var my_id;
-          my_id = CryptoJS.SHA1(authObject.google.email).toString().substring(0, 11);
-          me = $firebaseObject(ref.child('artists/' + my_id));
-        }), function(error) {
-          console.log(error);
-        });
       }
     };
   });
@@ -886,7 +785,12 @@ A simple example service that returns some data.
     };
     ctrl.setNowPlaying = function(index) {
       var m;
-      ctrl.API.stop();
+      console.log(this, ctrl, ctrl.API);
+      try {
+        ctrl.API.stop();
+      } catch (_error) {
+        console.log('ERR');
+      }
       ctrl.currentSong = index;
       ctrl.nowPlaying = ctrl.playlist[index];
       m = ctrl.playlist[index].media;
@@ -904,6 +808,103 @@ A simple example service that returns some data.
           }
         }
       }), 200);
+    };
+  });
+
+}).call(this);
+
+(function() {
+  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, AccountService, SongService, TransmitService) {
+    console.log('ACCOUNT');
+    $scope.awsParamsURI = TransmitService.awsParamsURI();
+    $scope.awsFolder = TransmitService.awsFolder();
+    $scope.s3Bucket = TransmitService.s3Bucket();
+    AccountService.refresh(function(myself) {
+      $scope.me = myself;
+      myself.$bindTo($scope, 'me');
+      return $scope.songs = SongService.getList($scope.me.songs);
+    });
+    return $scope.propogate = function() {
+      var i, len, ref, results, song;
+      ref = $scope.songs;
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        song = ref[i];
+        song.artist.alias = $scope.me.alias;
+        song.artist.avatar = $scope.me.avatar;
+        results.push(song.$save());
+      }
+      return results;
+    };
+  });
+
+}).call(this);
+
+
+/*
+A simple example service that returns some data.
+ */
+
+(function() {
+  angular.module("songaday").factory("AccountService", function($rootScope, $firebaseArray, $firebaseObject, Auth, FBURL) {
+    var loading, me, ref;
+    ref = new Firebase(FBURL);
+    loading = true;
+    me = {};
+    return {
+      loggedIn: function() {
+        return console.log(auth);
+      },
+      refresh: function(cb) {
+        return Auth.$waitForAuth().then(function(authObject) {
+          var my_id;
+          if (authObject === null || typeof authObject.google === 'undefined') {
+            console.log("NOT LOGGED IN");
+            return;
+          }
+          my_id = CryptoJS.SHA1(authObject.google.email).toString().substring(0, 11);
+          me = $firebaseObject(ref.child('artists/' + my_id));
+          me.email = authObject.google.email;
+          $rootScope.notifications = $firebaseArray(ref.child('notices/' + my_id));
+          $rootScope.notifications.$loaded(function() {
+            return console.log($rootScope.notifications);
+          });
+          return me.$loaded(function() {
+            console.log(me);
+            return cb(me);
+          });
+        });
+      },
+      mySelf: function() {
+        return me;
+      },
+      remove_song: function(song, cb) {
+        var last_song_ref, last_song_uri, song_ref, song_uri;
+        song_uri = FBURL + '/artists/' + me.$id + '/songs/' + song.$id;
+        last_song_uri = FBURL + '/artists/' + me.$id + '/last_transmission/';
+        song_ref = new Firebase(song_uri);
+        last_song_ref = new Firebase(last_song_uri);
+        song_ref.remove();
+        last_song_ref.remove();
+        song.$remove();
+        return cb();
+      },
+      logout: function() {
+        return Auth.$unauth();
+      },
+      login: function() {
+        var provider;
+        provider = 'google';
+        return Auth.$authWithOAuthPopup(provider, {
+          scope: "email"
+        }).then((function(authObject) {
+          var my_id;
+          my_id = CryptoJS.SHA1(authObject.google.email).toString().substring(0, 11);
+          me = $firebaseObject(ref.child('artists/' + my_id));
+        }), function(error) {
+          console.log(error);
+        });
+      }
     };
   });
 
@@ -1278,7 +1279,7 @@ A simple example service that returns some data.
           reader = new FileReader;
           reader.onload = function(evt) {
             var file_type;
-            file_type = "audio/m4a";
+            file_type = "audio/wav";
             $rootScope.file_blob = new Blob([new Uint8Array(this.result)], {
               type: file_type
             });
@@ -1572,106 +1573,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading) {
-    $ionicLoading.show({
-      template: 'Loading...'
-    });
-    $scope.song = SongService.get($stateParams.songId);
-    return $scope.song.$loaded(function() {
-      return $ionicLoading.hide();
-    });
-  });
 
-}).call(this);
-
-(function() {
-  angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, SongService) {
-    $scope.songs = SongService.some();
-    $scope.loading = true;
-    $scope.songs.$loaded(function() {
-      return $scope.loading = false;
-    });
-    $scope.loadMore = function() {
-      $scope.loading = true;
-      return SongService.more(function() {
-        return $scope.loading = false;
-      });
-    };
-    return $scope.playAll = function() {
-      var i, len, ref, results, song;
-      ref = $scope.songs;
-      results = [];
-      for (i = 0, len = ref.length; i < len; i++) {
-        song = ref[i];
-        results.push($scope.enQueue(song));
-      }
-      return results;
-    };
-  });
-
-}).call(this);
-
-
-/*
-A simple example service that returns some data.
- */
-
-(function() {
-  angular.module("songaday").factory("SongService", function($firebaseObject, $firebaseArray, AccountService, FBURL) {
-    var limit, ref, scroll, scrollRef, songs;
-    limit = 7;
-    ref = new Firebase(FBURL + 'songs');
-    scrollRef = new Firebase.util.Scroll(ref, '$priority');
-    scroll = scrollRef.scroll;
-    songs = $firebaseArray(scrollRef);
-    return {
-      some: function() {
-        this.more();
-        return songs;
-      },
-      more: function(cb) {
-        scroll.next(limit);
-        if (cb) {
-          return cb();
-        }
-      },
-      comment: function(song, comment) {
-        var comments, commentsRef, notices, noticesRef, notification;
-        commentsRef = new Firebase(FBURL + 'songs/' + song.$id + '/comments');
-        comments = $firebaseArray(commentsRef);
-        comments.$add(comment);
-        console.log(comment);
-        noticesRef = new Firebase(FBURL + 'notices/' + song.artist.key);
-        notices = $firebaseArray(noticesRef);
-        notification = {};
-        return notices.$loaded(function() {
-          notification.message = comment.author.alias + ' commented on your song ' + song.title;
-          notification.link = song.$id;
-          notification.author = comment.author;
-          notices.$add(notification);
-          return comment = {};
-        });
-      },
-      get: function(songId) {
-        ref = new Firebase(FBURL + '/songs/' + songId);
-        return $firebaseObject(ref);
-      },
-      getList: function(songList, calback) {
-        var callback, i, len, playlist, song, songId, songsInOrder;
-        playlist = [];
-        songsInOrder = Object.keys(songList).reverse();
-        for (i = 0, len = songsInOrder.length; i < len; i++) {
-          songId = songsInOrder[i];
-          song = this.get(songId);
-          playlist.push(song);
-          if (typeof (callback = 'function')) {
-            song.$loaded(callback);
-          }
-        }
-        return playlist;
-      }
-    };
-  });
 
 }).call(this);
 
@@ -1822,6 +1724,110 @@ A simple example service that returns some data.
         return S3Uploader.upload($rootScope, s3Uri, key, opts.acl, blob.type, s3Options.key, s3Options.policy, s3Options.signature, blob).then(function(obj) {
           callback(cloudFront + key);
         });
+      }
+    };
+  });
+
+}).call(this);
+
+(function() {
+  angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading) {
+    $ionicLoading.show({
+      template: 'Loading...'
+    });
+    $scope.song = SongService.get($stateParams.songId);
+    return $scope.song.$loaded(function() {
+      return $ionicLoading.hide();
+    });
+  });
+
+}).call(this);
+
+(function() {
+  angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, SongService) {
+    $scope.songs = SongService.some();
+    $scope.loading = true;
+    $scope.songs.$loaded(function() {
+      return $scope.loading = false;
+    });
+    $scope.loadMore = function() {
+      $scope.loading = true;
+      return SongService.more(function() {
+        return $scope.loading = false;
+      });
+    };
+    return $scope.playAll = function() {
+      var i, len, ref, results, song;
+      ref = $scope.songs;
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        song = ref[i];
+        results.push($scope.enQueue(song));
+      }
+      return results;
+    };
+  });
+
+}).call(this);
+
+
+/*
+A simple example service that returns some data.
+ */
+
+(function() {
+  angular.module("songaday").factory("SongService", function($firebaseObject, $firebaseArray, AccountService, FBURL) {
+    var limit, ref, scroll, scrollRef, songs;
+    limit = 7;
+    ref = new Firebase(FBURL + 'songs');
+    scrollRef = new Firebase.util.Scroll(ref, '$priority');
+    scroll = scrollRef.scroll;
+    songs = $firebaseArray(scrollRef);
+    return {
+      some: function() {
+        this.more();
+        return songs;
+      },
+      more: function(cb) {
+        scroll.next(limit);
+        if (cb) {
+          return cb();
+        }
+      },
+      comment: function(song, comment) {
+        var comments, commentsRef, notices, noticesRef, notification;
+        commentsRef = new Firebase(FBURL + 'songs/' + song.$id + '/comments');
+        comments = $firebaseArray(commentsRef);
+        comments.$add(comment);
+        console.log(comment);
+        noticesRef = new Firebase(FBURL + 'notices/' + song.artist.key);
+        notices = $firebaseArray(noticesRef);
+        notification = {};
+        return notices.$loaded(function() {
+          notification.message = comment.author.alias + ' commented on your song ' + song.title;
+          notification.link = song.$id;
+          notification.author = comment.author;
+          notices.$add(notification);
+          return comment = {};
+        });
+      },
+      get: function(songId) {
+        ref = new Firebase(FBURL + '/songs/' + songId);
+        return $firebaseObject(ref);
+      },
+      getList: function(songList, calback) {
+        var callback, i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
+        songsInOrder = Object.keys(songList).reverse();
+        for (i = 0, len = songsInOrder.length; i < len; i++) {
+          songId = songsInOrder[i];
+          song = this.get(songId);
+          playlist.push(song);
+          if (typeof (callback = 'function')) {
+            song.$loaded(callback);
+          }
+        }
+        return playlist;
       }
     };
   });

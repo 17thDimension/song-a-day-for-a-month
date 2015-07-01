@@ -75,7 +75,8 @@ audio {
   width: 100%;
   left: 0px;
   height: 4px;
-  margin: 0px !important; }
+  margin: 0px !important;
+  border: none !important; }
 
 /* Background Colors  */
 progress, progress[role][aria-valuenow] {
@@ -85,16 +86,16 @@ progress, progress[role][aria-valuenow] {
 
 /* Chrome */
 progress::-webkit-progress-bar {
-  background: #F0F0F0; }
+  background: #F0F0F0 !important; }
 
 /* Foreground Colors   */
 /* IE10 */
 progress {
-  color: #80CC99; }
+  color: #80CC99 !important; }
 
 /* Firefox */
 progress::-moz-progress-bar {
-  background: #80CC99; }
+  background: #80CC99 !important; }
 
 /* Chrome */
 progress::-webkit-progress-value {
