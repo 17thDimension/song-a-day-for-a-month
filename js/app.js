@@ -43,7 +43,7 @@
 (function() {
   var app;
 
-  app = angular.module(GLOBALS.ANGULAR_APP_NAME, [GLOBALS.ANGULAR_APP_NAME + ".templates", "ionic", "angulartics.google.analytics", "angulartics.google.analytics.cordova", "firebase", "angularMoment", "ngS3upload", "com.2fdevs.videogular", "com.2fdevs.videogular.plugins.buffering", "angular-scroll-complete"]).constant('FBURL', 'https://song-a-day.firebaseio.com/');
+  app = angular.module(GLOBALS.ANGULAR_APP_NAME, [GLOBALS.ANGULAR_APP_NAME + ".templates", "ionic", "angulartics.google.analytics", "firebase", "angularMoment", "ngS3upload", "com.2fdevs.videogular", "com.2fdevs.videogular.plugins.buffering", "angular-scroll-complete"]).constant('FBURL', 'https://song-a-day.firebaseio.com/');
 
 }).call(this);
 
@@ -98,7 +98,7 @@
 (function() {
   var app;
 
-  if (!GLOBALS.CORDOVA_GOOGLE_ANALYTICS_ID) {
+  if (!GLOBALS.GOOGLE_ANALYTICS_ID) {
     return;
   }
 
@@ -385,6 +385,26 @@
 
 }).call(this);
 
+(function() {
+  angular.module('songaday').filter('length', function() {
+    return function(item) {
+      return Object.keys(item || {}).length;
+    };
+  });
+
+}).call(this);
+
+(function() {
+  angular.module('songaday').filter('trust', function($sce) {
+    return function(url) {
+      if (url) {
+        return $sce.trustAsResourceUrl(url);
+      }
+    };
+  });
+
+}).call(this);
+
 
 /*
 A simple example service that returns some data.
@@ -565,26 +585,6 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module('songaday').filter('length', function() {
-    return function(item) {
-      return Object.keys(item || {}).length;
-    };
-  });
-
-}).call(this);
-
-(function() {
-  angular.module('songaday').filter('trust', function($sce) {
-    return function(url) {
-      if (url) {
-        return $sce.trustAsResourceUrl(url);
-      }
-    };
-  });
-
-}).call(this);
-
-(function() {
   Array.prototype.last = function(n) {
     n = typeof n !== 'undefined' ? n : 1;
     return this[this.length - n];
@@ -648,7 +648,14 @@ A simple example service that returns some data.
           }
           my_id = CryptoJS.SHA1(authObject.google.email).toString().substring(0, 11);
           me = $firebaseObject(ref.child('artists/' + my_id));
-          me.email = authObject.google.email;
+          me.$loaded(function() {
+            if (!me['user_id']) {
+              ref.child('artists').child(my_id).child('user_id').set(authObject.uid);
+            }
+            if (!me['email']) {
+              return ref.child('artists').child(my_id).child('email').set(authObject.google.email);
+            }
+          });
           $rootScope.notifications = $firebaseArray(ref.child('notices/' + my_id));
           $rootScope.notifications.$loaded(function() {
             return console.log($rootScope.notifications);
