@@ -385,26 +385,6 @@
 
 }).call(this);
 
-(function() {
-  angular.module('songaday').filter('length', function() {
-    return function(item) {
-      return Object.keys(item || {}).length;
-    };
-  });
-
-}).call(this);
-
-(function() {
-  angular.module('songaday').filter('trust', function($sce) {
-    return function(url) {
-      if (url) {
-        return $sce.trustAsResourceUrl(url);
-      }
-    };
-  });
-
-}).call(this);
-
 
 /*
 A simple example service that returns some data.
@@ -585,6 +565,26 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
+  angular.module('songaday').filter('length', function() {
+    return function(item) {
+      return Object.keys(item || {}).length;
+    };
+  });
+
+}).call(this);
+
+(function() {
+  angular.module('songaday').filter('trust', function($sce) {
+    return function(url) {
+      if (url) {
+        return $sce.trustAsResourceUrl(url);
+      }
+    };
+  });
+
+}).call(this);
+
+(function() {
   Array.prototype.last = function(n) {
     n = typeof n !== 'undefined' ? n : 1;
     return this[this.length - n];
@@ -729,7 +729,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("AppCtrl", function($sce, SongService, AccountService, $state, $rootScope, $scope, $ionicSideMenuDelegate, $stateParams, $timeout, AudioVisualizerService, $window) {
+  angular.module("songaday").controller("AppCtrl", function($sce, SongService, AccountService, $state, $rootScope, $scope, $ionicSideMenuDelegate, $stateParams, $timeout, ListenService, AudioVisualizerService, $window) {
     var ctrl;
     ctrl = this;
     ctrl.state = null;
@@ -894,7 +894,6 @@ A simple example service that returns some data.
     };
     ctrl.setNowPlaying = function(index) {
       var m;
-      console.log(this, ctrl, ctrl.API);
       try {
         ctrl.API.stop();
       } catch (_error) {
@@ -902,6 +901,7 @@ A simple example service that returns some data.
       }
       ctrl.currentSong = index;
       ctrl.nowPlaying = ctrl.playlist[index];
+      ListenService.listen(ctrl.nowPlaying);
       m = ctrl.playlist[index].media;
       ctrl.config.sources = [
         {
@@ -913,6 +913,11 @@ A simple example service that returns some data.
         ctrl.API.play();
         if (_(m.type).contains('video')) {
           if (!ctrl.API.isFullScreen) {
+            ctrl.API.toggleFullScreen();
+          }
+        }
+        if (_(m.type).contains('audio')) {
+          if (ctrl.API.isFullScreen) {
             return ctrl.API.toggleFullScreen();
           }
         }
@@ -1000,6 +1005,39 @@ A simple example service that returns some data.
             return alert('Check your' + authObject.google.email + ' email tommorow ;)');
           }
         });
+      }
+    };
+  });
+
+}).call(this);
+
+(function() {
+  angular.module("songaday").controller("ListenCtrl", function($scope, ListenService, SongService) {
+    console.log('LISTENS');
+    $scope.listens = ListenService.getListens();
+    return $scope.listens.$loaded(function(l) {
+      delete l.$priority;
+      delete l.$id;
+      delete l.$$conf;
+      console.log('loaded', l);
+      return $scope.songs = SongService.getList(l);
+    });
+  });
+
+}).call(this);
+
+(function() {
+  angular.module("songaday").factory("ListenService", function(FBURL, $firebaseObject) {
+    var ref;
+    ref = new Firebase(FBURL + 'listens');
+    return {
+      listen: function(song) {
+        return ref.child(song.$id).transaction(function(current_value) {
+          return current_value = (current_value || 0) + 1;
+        });
+      },
+      getListens: function() {
+        return $firebaseObject(ref);
       }
     };
   });
@@ -1669,15 +1707,15 @@ A simple example service that returns some data.
         ref = new Firebase(FBURL + '/songs/' + songId);
         return $firebaseObject(ref);
       },
-      getList: function(songList, calback) {
-        var callback, i, len, playlist, song, songId, songsInOrder;
+      getList: function(songList, callback) {
+        var i, len, playlist, song, songId, songsInOrder;
         playlist = [];
         songsInOrder = Object.keys(songList).reverse();
         for (i = 0, len = songsInOrder.length; i < len; i++) {
           songId = songsInOrder[i];
           song = this.get(songId);
           playlist.push(song);
-          if (typeof (callback = 'function')) {
+          if (typeof callback === 'function') {
             song.$loaded(callback);
           }
         }
@@ -2004,6 +2042,14 @@ A simple example service that returns some data.
         "main-content": {
           templateUrl: "templates/playlist-index.html",
           controller: "PlaylistIndexCtrl"
+        }
+      }
+    }).state("app.listens", {
+      url: "/listens",
+      views: {
+        "main-content": {
+          templateUrl: "templates/listens.html",
+          controller: "ListenCtrl"
         }
       }
     }).state("app.playlist-detail", {
