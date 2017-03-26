@@ -938,14 +938,14 @@ A simple example service that returns some data.
 
             return $scope.loading = false;
           } else {
-             // return $scope.artist.$loaded(function() {
-             // $scope.songs = SongService.getList($scope.artist.songs);
-             // console.log($scope.songs[0]);
-             // $scope.songs[0].$loaded(function() {
-             // return console.log($scope.songs[0]);
-             //   });
-             // return $scope.loading = false;
-             // });
+             return $scope.artist.$loaded(function() {
+             $scope.songs = SongService.getList($scope.artist.songs);
+             console.log($scope.songs[0]);
+             $scope.songs[0].$loaded(function() {
+             return console.log($scope.songs[0]);
+               });
+             return $scope.loading = false;
+             });
           }
       });
    
