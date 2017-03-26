@@ -928,17 +928,27 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth) {
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.loading = true;
-    return $scope.artist.$loaded(function() {
-      $scope.songs = SongService.getList($scope.artist.songs);
-      console.log($scope.songs[0]);
-      $scope.songs[0].$loaded(function() {
-        return console.log($scope.songs[0]);
+
+       Auth.$waitForAuth().then(function(authObject) {
+          if (authObject === null || typeof authObject.google === 'undefined') {
+            alert('this profile is viewable only to song a day participants.');
+
+            return $scope.loading = false;
+          } else {
+             // return $scope.artist.$loaded(function() {
+             // $scope.songs = SongService.getList($scope.artist.songs);
+             // console.log($scope.songs[0]);
+             // $scope.songs[0].$loaded(function() {
+             // return console.log($scope.songs[0]);
+             //   });
+             // return $scope.loading = false;
+             // });
+          }
       });
-      return $scope.loading = false;
-    });
+   
   });
 
 }).call(this);
