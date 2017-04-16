@@ -928,13 +928,13 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($rootScope, $scope, $stateParams, SongService, ArtistService, Auth) {
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.loading = true;
 
        Auth.$waitForAuth().then(function(authObject) {
           if (authObject === null || typeof authObject.google === 'undefined') {
-            alert('this profile is viewable only to song a day participants.');
+            $rootScope.loggedIn = false;
 
             return $scope.loading = false;
           } else {
