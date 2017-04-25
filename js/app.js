@@ -938,6 +938,7 @@ A simple example service that returns some data.
 
             return $scope.loading = false;
           } else {
+             $rootScope.loggedIn = true;
              return $scope.artist.$loaded(function() {
              $scope.songs = SongService.getList($scope.artist.songs);
              console.log($scope.songs[0]);
