@@ -928,30 +928,30 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($rootScope, $scope, $stateParams, SongService, ArtistService, Auth) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth) {
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.loading = true;
-
-       Auth.$waitForAuth().then(function(authObject) {
+    $scope.canSeeProfile = true;
+    return $scope.artist.$loaded(function() {
+      Auth.$waitForAuth().then(function(authObject) {
           if (authObject === null || typeof authObject.google === 'undefined') {
-            $rootScope.loggedIn = false;
-
-            return $scope.loading = false;
-          } else {
-             $rootScope.loggedIn = true;
-             return $scope.artist.$loaded(function() {
-             $scope.songs = SongService.getList($scope.artist.songs);
-             console.log($scope.songs[0]);
-             $scope.songs[0].$loaded(function() {
-             return console.log($scope.songs[0]);
-               });
-             return $scope.loading = false;
-             });
+            if (!$scope.artist.isPublic) {
+                $scope.canSeeProfile = false;
+                return $scope.loading = false;
+            }
           }
-      });
-   
-  });
 
+          $scope.songs = SongService.getList($scope.artist.songs);
+          console.log($scope.songs[0]);
+          $scope.songs[0].$loaded(function() {
+            return console.log($scope.songs[0]);
+          });
+          return $scope.loading = false;
+ 
+      });
+    });
+          
+  });    
 }).call(this);
 
 (function() {
