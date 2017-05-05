@@ -928,15 +928,15 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($rootScope, $scope, $stateParams, SongService, ArtistService, Auth) {
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.loading = true;
-    $scope.canSeeProfile = true;
+    $rootScope.canSeeProfile = true;
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
           if (authObject === null || typeof authObject.google === 'undefined') {
             if (!$scope.artist.isPublic) {
-                $scope.canSeeProfile = false;
+                $rootScope.canSeeProfile = false;
                 return $scope.loading = false;
             }
           }
@@ -949,9 +949,9 @@ A simple example service that returns some data.
           return $scope.loading = false;
  
       });
-    });
-          
-  });    
+    });     
+  });  
+
 }).call(this);
 
 (function() {
