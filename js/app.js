@@ -935,7 +935,7 @@ A simple example service that returns some data.
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
           if (authObject === null || typeof authObject.google === 'undefined') {
-            if (!$scope.artist.isPublic) {
+            if ($scope.artist.isPrivate) {
                 $scope.loggedIn = false;
                 return $scope.loading = false;
             }
