@@ -932,13 +932,14 @@ A simple example service that returns some data.
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.limit = 7;
     $scope.offset = 1;
-
+    $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
     $scope.loadMore = function() {
       $scope.offset++;
+      var num_songs = $scope.length;
       $scope.songs = SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id );
-      console.log(songs);
+      $scope.didReachEnd = num_songs === $scope.songs.length;
       return songs;
     }; 
 
@@ -951,7 +952,6 @@ A simple example service that returns some data.
             }
           }
           $scope.songs = SongService.getListWithLimit($scope.limit, $scope.artist.$id );
-          console.log($scope.songs);
           $scope.songs[0].$loaded(function() {
             return console.log($scope.songs[0]);
           });
@@ -1727,9 +1727,14 @@ A simple example service that returns some data.
         return $firebaseObject(ref);
       },
       getLimit: function(artistId, limit) {
-         console.log(FBURL);
-         ref = new Firebase(FBURL + 'songs?orderBy=\"artist/key\"&equalTo=\"' + artistId + '\"limitToLast=' + limit + '');
-         console.log(ref);
+         ref = new Firebase(FBURL + 
+                            'songs?orderBy=\"artist_timestamp\"&startAt=\"' + 
+                            artistId + 
+                            '_\"&endAt=\"' + 
+                            artistId +
+                            '_9999\"&limitToLast=' + 
+                            limit + 
+                            '')
          return $firebaseArray(ref);
       },
       getList: function(songList, callback) {
@@ -1749,10 +1754,8 @@ A simple example service that returns some data.
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
         playlist = [];
-        console.log('in get with limit');
         songsArray = this.getLimit(artistId, limit);
         for (i = 0, len = songsArray.length; i < len; i++) {
-          console.log(song);
           playlist.push(songsArray[i]);
           if (typeof callback === 'function') {
             song.$loaded(callback);
