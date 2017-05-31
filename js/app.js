@@ -928,10 +928,21 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
     $scope.artist = ArtistService.get($stateParams.artistId);
+    $scope.limit = 7;
+    $scope.offset = 1;
+    $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
+    $scope.loadMore = function() {
+      $scope.offset++;
+      var num_songs = $scope.length;
+      $scope.songs = SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id );
+      $scope.didReachEnd = num_songs === $scope.songs.length;
+      return songs;
+    }; 
+
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
           if (authObject === null || typeof authObject.google === 'undefined') {
@@ -940,16 +951,13 @@ A simple example service that returns some data.
                 return $scope.loading = false;
             }
           }
-
-          $scope.songs = SongService.getList($scope.artist.songs);
-          console.log($scope.songs[0]);
+          $scope.songs = SongService.getListWithLimit($scope.limit, $scope.artist.$id );
           $scope.songs[0].$loaded(function() {
             return console.log($scope.songs[0]);
           });
           return $scope.loading = false;
- 
       });
-    });     
+    });       
   });  
 
 }).call(this);
@@ -1718,6 +1726,17 @@ A simple example service that returns some data.
         ref = new Firebase(FBURL + '/songs/' + songId);
         return $firebaseObject(ref);
       },
+      getLimit: function(artistId, limit) {
+         ref = new Firebase(FBURL + 
+                            'songs?orderBy=\"artist_timestamp\"&startAt=\"' + 
+                            artistId + 
+                            '_\"&endAt=\"' + 
+                            artistId +
+                            '_9999\"&limitToLast=' + 
+                            limit + 
+                            '')
+         return $firebaseArray(ref);
+      },
       getList: function(songList, callback) {
         var i, len, playlist, song, songId, songsInOrder;
         playlist = [];
@@ -1731,7 +1750,20 @@ A simple example service that returns some data.
           }
         }
         return playlist;
+      },
+      getListWithLimit: function(limit, artistId, callback) {
+        var i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
+        songsArray = this.getLimit(artistId, limit);
+        for (i = 0, len = songsArray.length; i < len; i++) {
+          playlist.push(songsArray[i]);
+          if (typeof callback === 'function') {
+            song.$loaded(callback);
+          }
+        }
+        return playlist;
       }
+
     };
   });
 
