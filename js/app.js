@@ -948,7 +948,10 @@ A simple example service that returns some data.
     }; 
 
     $scope.loadAll = function() {
-        if (!$scope.loading){ $rootScope.loading = true;}
+      console.log('load all');
+        if ($scope.loading === false || $scope.loading === undefined){
+        console.log('hello root');
+         $rootScope.loading = true;}
         $scope.songs = SongService.getList($scope.artist.songs);
           console.log($scope.songs[0]);
           $scope.songs[0].$loaded(function() {
@@ -956,7 +959,8 @@ A simple example service that returns some data.
           });
           return $scope.loading = false;
           $scope.didReachEnd = true;
-    }; 
+
+    };
 
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
