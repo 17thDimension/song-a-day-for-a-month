@@ -928,7 +928,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($rootScope, $scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.limit = 7;
     $scope.offset = 0;
@@ -937,20 +937,18 @@ A simple example service that returns some data.
     $scope.loggedIn = true;
 
     $scope.loadMore = function() {
-        if (!$scope.didReachEnd){
-         $scope.offset++;
-              SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
-        
-        $scope.songs = songs;
-        $scope.loading = false;
-      });
-        }
- 
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){ $rootScope.loading = true;}
+        $scope.offset++;
+        SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
+          $scope.songs = songs;
+          $scope.loading = false;
+        });
+      }
     }; 
 
     $scope.loadAll = function() {
-        $scope.loading = true;
-        console.log('loading all');
+        if (!$scope.loading){ $rootScope.loading = true;}
         $scope.songs = SongService.getList($scope.artist.songs);
           console.log($scope.songs[0]);
           $scope.songs[0].$loaded(function() {
@@ -1136,6 +1134,7 @@ A simple example service that returns some data.
       return $scope.songs = SongService.getList($scope.playlist.songs);
     });
     return $scope.playAll = function() {
+      console.log('in the play');
       var i, len, ref, results, song;
       ref = $scope.songs;
       results = [];
@@ -1677,6 +1676,7 @@ A simple example service that returns some data.
     $scope.songs = SongService.some();
     $scope.loading = true;
     $scope.songs.$loaded(function() {
+      console.log('done loading');
       return $scope.loading = false;
     });
     $scope.loadMore = function() {
@@ -1774,7 +1774,6 @@ A simple example service that returns some data.
         songsArray.$loaded(function() {
               angular.forEach(songsArray, function(value, key) {
             playlist.push(value);
-            console.log('pushing stuff');
        });
        
        return callback(playlist);

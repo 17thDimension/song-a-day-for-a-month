@@ -1,6 +1,11 @@
 
 /**
- * Ryan Wieghard modifies the original source from Google
+ * Ryan Wieghard modifies the original source from Google firebase 
+ * github examples here:
+ *
+ * 1) https://github.com/firebase/functions-samples/tree/master/delete-unused-accounts-cron
+ * 2) https://github.com/firebase/functions-samples/blob/master/text-moderation/functions/index.js 
+ * 
  * with modifications to the original source demonstrated in comments
  *
  * Copyright 2016 Google Inc. All Rights Reserved.
@@ -23,17 +28,22 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 const rp = require('request-promise');
-const promisePool = require('es6-promise-pool');
-const PromisePool = promisePool.PromisePool;
-const secureCompare = require('secure-compare');
-// Maximum concurrent account deletions.
-const MAX_CONCURRENT = 3;
+;
 
-/**
- * When requested this Function will delete every user accounts that has been inactive for 30 days.
- * The request needs to be authorized by passing a 'key' query parameter in the URL. This key must
- * match a key set as an environment variable using `firebase functions:config:set cron.key="YOUR_KEY"`.
- */
+exports.moderator = functions.database.ref('/songs/{songId}').onWrite(event => { //changes to listen for a write to songs
+      const song = event.data.val();
+      console.log(song);
+      console.log('writing to songs');
+      if  (song && song.artist && song.artist.key && song.timestamp ){ //only test on my acct first
+        var artist_timestamp = song.artist.key + "_" + song.timestamp;
+        console.log('updating to ' + artist_timestamp);
+        return event.data.adminRef.update({
+          artist_timestamp: artist_timestamp
+        });
+      }
+      return;
+});
+
 exports.songmigration = functions.https.onRequest((req, res) => {
 
   // Fetch all user details.
@@ -54,7 +64,7 @@ exports.songmigration = functions.https.onRequest((req, res) => {
          	console.log('weird input');
          }
     }
-    res();
+    res.send('finished migration');
   });
 });
 
@@ -71,7 +81,6 @@ function getSongs(songIds = []) {
 	   var i;
       var songs = [];
 	  for (i=0; i < songIds.length; i++){
-	  	//console.log(val[songIds[i]]);
 	  	songs.push(val[songIds[i]]);
 	  	songs[i].key = songIds[i];
 	  }
