@@ -937,16 +937,28 @@ A simple example service that returns some data.
     $scope.loggedIn = true;
 
     $scope.loadMore = function() {
-      $scope.offset++;
-      SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
+        if (!$scope.didReachEnd){
+         $scope.offset++;
+              SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
+        
         $scope.songs = songs;
         $scope.loading = false;
       });
-
-
+        }
+ 
     }; 
 
-
+    $scope.loadAll = function() {
+        $scope.loading = true;
+        console.log('loading all');
+        $scope.songs = SongService.getList($scope.artist.songs);
+          console.log($scope.songs[0]);
+          $scope.songs[0].$loaded(function() {
+            return console.log($scope.songs[0]);
+          });
+          return $scope.loading = false;
+          $scope.didReachEnd = true;
+    }; 
 
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
