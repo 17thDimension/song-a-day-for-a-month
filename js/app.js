@@ -931,17 +931,22 @@ A simple example service that returns some data.
   angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.limit = 7;
-    $scope.offset = 1;
+    $scope.offset = 0;
     $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
+
     $scope.loadMore = function() {
       $scope.offset++;
-      var num_songs = $scope.length;
-      $scope.songs = SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id );
-      $scope.didReachEnd = num_songs === $scope.songs.length;
-      return songs;
+      SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
+        $scope.songs = songs;
+        $scope.loading = false;
+      });
+
+
     }; 
+
+
 
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
@@ -951,11 +956,10 @@ A simple example service that returns some data.
                 return $scope.loading = false;
             }
           }
-          $scope.songs = SongService.getListWithLimit($scope.limit, $scope.artist.$id );
-          $scope.songs[0].$loaded(function() {
-            return console.log($scope.songs[0]);
-          });
-          return $scope.loading = false;
+          
+          $scope.loadMore();
+          
+          return true;
       });
     });       
   });  
@@ -966,6 +970,7 @@ A simple example service that returns some data.
   angular.module("songaday").controller("ArtistIndexCtrl", function($scope, $state, ArtistService) {
     $scope.artists = ArtistService.some();
     $scope.loading = true;
+    console.log('hello in artist index ctrl');
     return $scope.artists.$loaded(function() {
       return $scope.loading = false;
     });
@@ -986,6 +991,7 @@ A simple example service that returns some data.
     artists = $firebaseArray(ref);
     return {
       some: function() {
+        console.log('in some');
         artists.$loaded(function() {
           return this.loading = false;
         });
@@ -1727,15 +1733,12 @@ A simple example service that returns some data.
         return $firebaseObject(ref);
       },
       getLimit: function(artistId, limit) {
-         ref = new Firebase(FBURL + 
-                            'songs?orderBy=\"artist_timestamp\"&startAt=\"' + 
-                            artistId + 
-                            '_\"&endAt=\"' + 
-                            artistId +
-                            '_9999\"&limitToLast=' + 
-                            limit + 
-                            '')
-         return $firebaseArray(ref);
+         ref= new Firebase(FBURL + 'songs');
+         query = ref.orderByChild("artist_timestamp")
+               .startAt(artistId)
+               .endAt(artistId+'_9999')
+               .limitToLast(limit);
+          return $firebaseArray(query);
       },
       getList: function(songList, callback) {
         var i, len, playlist, song, songId, songsInOrder;
@@ -1754,14 +1757,19 @@ A simple example service that returns some data.
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
         playlist = [];
+  
         songsArray = this.getLimit(artistId, limit);
-        for (i = 0, len = songsArray.length; i < len; i++) {
-          playlist.push(songsArray[i]);
-          if (typeof callback === 'function') {
-            song.$loaded(callback);
-          }
-        }
-        return playlist;
+        songsArray.$loaded(function() {
+              angular.forEach(songsArray, function(value, key) {
+            playlist.push(value);
+            console.log('pushing stuff');
+       });
+       
+       return callback(playlist);
+     });
+     
+         
+     
       }
 
     };
