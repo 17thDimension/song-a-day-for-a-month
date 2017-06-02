@@ -948,12 +948,9 @@ A simple example service that returns some data.
     }; 
 
     $scope.loadAll = function() {
-      console.log('load all');
         if ($scope.loading === false || $scope.loading === undefined){
-        console.log('hello root');
          $rootScope.loading = true;}
         $scope.songs = SongService.getList($scope.artist.songs);
-          console.log($scope.songs[0]);
           $scope.songs[0].$loaded(function() {
             return console.log($scope.songs[0]);
           });
@@ -1752,7 +1749,7 @@ A simple example service that returns some data.
          ref= new Firebase(FBURL + 'songs');
          query = ref.orderByChild("artist_timestamp")
                .startAt(artistId)
-               .endAt(artistId+'_9999')
+               .endAt(artistId+'_9999') //only will give most recent songs assumming that it is before year 9999
                .limitToLast(limit);
           return $firebaseArray(query);
       },
