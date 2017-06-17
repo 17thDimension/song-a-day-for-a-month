@@ -928,10 +928,39 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
     $scope.artist = ArtistService.get($stateParams.artistId);
+    $scope.limit = 7;
+    $scope.offset = 0;
+    $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
+
+    $scope.loadMore = function() {
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){ $scope.loading = true;}
+        $scope.offset++;
+        SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
+          $scope.songs = songs;
+          if ($scope.songs.length === Object.keys($scope.artist.songs).length ){ $scope.didReachEnd = true;}
+          $scope.loading = false;
+        });
+      }
+    }; 
+
+    $scope.loadAll = function() {
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){
+          $scope.loading = true;
+        }
+        $scope.songs = SongService.getList($scope.artist.songs);
+         $scope.songs[$scope.songs.length - 1].$loaded(function() {
+            $scope.loading = false;
+            $scope.didReachEnd = true;
+          });
+        }
+    };
+
     return $scope.artist.$loaded(function() {
       Auth.$waitForAuth().then(function(authObject) {
           if (authObject === null || typeof authObject.google === 'undefined') {
@@ -940,16 +969,12 @@ A simple example service that returns some data.
                 return $scope.loading = false;
             }
           }
-
-          $scope.songs = SongService.getList($scope.artist.songs);
-          console.log($scope.songs[0]);
-          $scope.songs[0].$loaded(function() {
-            return console.log($scope.songs[0]);
-          });
-          return $scope.loading = false;
- 
+          
+          $scope.loadMore();
+          
+          return true;
       });
-    });     
+    });       
   });  
 
 }).call(this);
@@ -978,6 +1003,7 @@ A simple example service that returns some data.
     artists = $firebaseArray(ref);
     return {
       some: function() {
+        console.log('in some');
         artists.$loaded(function() {
           return this.loading = false;
         });
@@ -1110,6 +1136,7 @@ A simple example service that returns some data.
       return $scope.songs = SongService.getList($scope.playlist.songs);
     });
     return $scope.playAll = function() {
+      console.log('in the play');
       var i, len, ref, results, song;
       ref = $scope.songs;
       results = [];
@@ -1651,6 +1678,7 @@ A simple example service that returns some data.
     $scope.songs = SongService.some();
     $scope.loading = true;
     $scope.songs.$loaded(function() {
+      console.log('done loading');
       return $scope.loading = false;
     });
     $scope.loadMore = function() {
@@ -1718,7 +1746,15 @@ A simple example service that returns some data.
         ref = new Firebase(FBURL + '/songs/' + songId);
         return $firebaseObject(ref);
       },
-      getList: function(songList, callback) {
+      getLimit: function(artistId, limit) {
+         ref= new Firebase(FBURL + 'songs');
+         query = ref.orderByChild("artist_timestamp")
+               .startAt(artistId)
+               .endAt(artistId+'_9999') //only will give most recent songs assumming that it is before year 9999
+               .limitToLast(limit);
+          return $firebaseArray(query);
+      },
+       getList: function(songList, callback) {
         var i, len, playlist, song, songId, songsInOrder;
         playlist = [];
         songsInOrder = Object.keys(songList).reverse();
@@ -1731,7 +1767,24 @@ A simple example service that returns some data.
           }
         }
         return playlist;
+      },
+      getListWithLimit: function(limit, artistId, callback) {
+        var i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
+  
+        songsArray = this.getLimit(artistId, limit);
+        songsArray.$loaded(function() {
+              angular.forEach(songsArray, function(value, key) {
+            playlist.push(value);
+       });
+       
+       return callback(playlist);
+     });
+     
+         
+     
       }
+
     };
   });
 
