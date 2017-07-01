@@ -402,12 +402,12 @@ A simple example service that returns some data.
 
     /*
     Basic form class that you can extend in your actual forms.
-    
+
     Object attributes:
     - loading[Boolean] - is the request waiting for response?
     - message[String] - after response, success message
     - errors[String[]] - after response, error messages
-    
+
     Options:
       - submitPromise[function] (REQUIRED) - creates a form request promise
       - onSuccess[function] - will be called on succeded promise
@@ -946,7 +946,7 @@ A simple example service that returns some data.
           $scope.loading = false;
         });
       }
-    }; 
+    };
 
     $scope.loadAll = function() {
       if (!$scope.didReachEnd){
@@ -969,13 +969,13 @@ A simple example service that returns some data.
                 return $scope.loading = false;
             }
           }
-          
+
           $scope.loadMore();
-          
+
           return true;
       });
-    });       
-  });  
+    });
+  });
 
 }).call(this);
 
@@ -1771,18 +1771,18 @@ A simple example service that returns some data.
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
         playlist = [];
-  
+
         songsArray = this.getLimit(artistId, limit);
         songsArray.$loaded(function() {
               angular.forEach(songsArray, function(value, key) {
             playlist.push(value);
        });
-       
+
        return callback(playlist);
      });
-     
-         
-     
+
+
+
       }
 
     };
@@ -1871,7 +1871,7 @@ A simple example service that returns some data.
     ref = new Firebase(FBURL + 'songs').limit(4);
     return {
       cloudFrontURI: function() {
-        return 'http://media.songadays.com/';
+        return 'https://s3-us-west-2.amazonaws.com/songadays/';
       },
       awsParamsURI: function() {
         return '/config/aws.json';
