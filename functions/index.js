@@ -28,13 +28,11 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 const rp = require('request-promise');
-;
 
 exports.moderator = functions.database.ref('/songs/{songId}').onWrite(event => { //changes to listen for a write to songs
       const song = event.data.val();
-      console.log(song);
       console.log('writing to songs');
-      if  (song && song.artist && song.artist.key && song.timestamp ){ //only test on my acct first
+      if  (song && song.artist && song.artist.key && song.timestamp ){ 
         var artist_timestamp = song.artist.key + "_" + song.timestamp;
         console.log('updating to ' + artist_timestamp);
         return event.data.adminRef.update({
@@ -45,23 +43,26 @@ exports.moderator = functions.database.ref('/songs/{songId}').onWrite(event => {
 });
 
 exports.songmigration = functions.https.onRequest((req, res) => {
-
   // Fetch all user details.
   getSongs().then(songs => {
     var db = admin.database();
   	var ref = db.ref("/songs");
-    // Modified: changes filter to look for users without an attribute
+    // Modified: changes filter to look for songs without essential attributes
     const incompleteSongs = songs.filter(
-        song =>  typeof(song.artist_timestamp) === "undefined") || typeof(song.artist) === "undefined";
+        song =>  typeof(song.artist_timestamp) === "undefined" || typeof(song.artist) === "undefined");
+
     var song_id;
-    console.log(incompleteSongs.length);
+    console.log('number of incomplete songs is: ', incompleteSongs.length);
     for (var i=0; i< incompleteSongs.length; i++) {
          song_id = incompleteSongs[i].key;
          if (incompleteSongs[i].key && incompleteSongs[i].artist && incompleteSongs[i].artist.key && incompleteSongs[i].timestamp){
          	    ref.child(song_id).child("artist_timestamp").set(incompleteSongs[i].artist.key + "_" + incompleteSongs[i].timestamp); 
          } else {
          	console.log(incompleteSongs[i]);
-         	console.log('weird input');
+          let songToDelete = ref.child(song_id);
+          songToDelete.remove().then(function(){
+            console.log('successfully deleted song', song_id);
+          });
          }
     }
     res.send('finished migration');
@@ -74,7 +75,6 @@ exports.songmigration = functions.https.onRequest((req, res) => {
 function getSongs(songIds = []) {
 	var db = admin.database();
 	var ref = db.ref("/songs");
-	console.log('get songs');
 	return ref.once("value").then((snapshot) => {
 	   var val = snapshot.val();
 	   songIds = songIds.concat(Object.keys(val));
@@ -85,6 +85,5 @@ function getSongs(songIds = []) {
 	  	songs[i].key = songIds[i];
 	  }
 	  return songs;
-	
 	});
 };
