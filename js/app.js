@@ -600,13 +600,45 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, AccountService, SongService, TransmitService) {
     console.log('ACCOUNT');
+    $scope.limit = 7;
+    $scope.offset = 0;
+    $scope.didReachEnd = false;
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
+
+    $scope.loadMore = function() {
+      console.log('in the loadMore');
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){ $scope.loading = true;}
+        $scope.offset++;
+        SongService.getListWithLimit($scope.limit * $scope.offset, $scope.me.$id, function(songs) {
+          $scope.songs = songs;
+          console.log('here is the callback');
+          console.log($scope.songs);
+          if ($scope.songs.length === Object.keys($scope.me.songs).length ){ $scope.didReachEnd = true;}
+          $scope.loading = false;
+        });
+      }
+    }; 
+
+    $scope.loadAll = function() {
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){
+          $scope.loading = true;
+        }
+        $scope.songs = SongService.getList($scope.me.songs);
+         $scope.songs[$scope.songs.length - 1].$loaded(function() {
+            $scope.loading = false;
+            $scope.didReachEnd = true;
+          });
+        }
+    };
+
     AccountService.refresh(function(myself) {
       $scope.me = myself;
       myself.$bindTo($scope, 'me');
-      return $scope.songs = SongService.getList($scope.me.songs);
+      return $scope.loadMore();
     });
     return $scope.propogate = function() {
       var i, len, ref, results, song;
