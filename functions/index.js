@@ -28,6 +28,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 admin.initializeApp(functions.config().firebase);
 const rp = require('request-promise');
+var _ = require('lodash');
 
 exports.moderator = functions.database.ref('/songs/{songId}').onWrite(event => { //changes to listen for a write to songs
       const song = event.data.val();
@@ -86,4 +87,59 @@ function getSongs(songIds = []) {
 	  }
 	  return songs;
 	});
+};
+
+
+
+exports.moderator = functions.database.ref('/artists/{artistId}').onWrite(event => { //changes google demo to listen for a write to artists
+      const artist = event.data.val();
+      return event.data.adminRef.root.child('public_artists').child(artist.key).update(artistToPublicArtist(artist));
+});
+
+
+exports.artistmigration = functions.https.onRequest((req, res) => {
+  // Fetch all user details.
+  getArtists().then(artists => {
+    var db = admin.database();
+    var ref = db.ref("/public_artists");
+    // Modified: changes filter to look for songs without essential attributes
+    const publicArtists = _.map(artists, (artist)=> {
+      return artistToPublicArtist(artist); 
+    });
+
+    for (var i=0; i< artists.length; i++) {
+         ref.child(artists[i].key).set(artists[i]);
+    }
+    res.send('finished migration');
+  });
+});
+
+function artistToPublicArtist(artist){
+   if (artist.songs){
+        artist.songCount = Object.keys(artist.songs).length;
+      } else {
+        artist.songCount = 0;
+      }      
+      delete artist.songs;
+      delete artist.last_transmission;
+      return artist;
+}
+
+/**
+ * Returns the list of all songs
+ */
+function getArtists(artistIds = []) {
+  var db = admin.database();
+  var ref = db.ref("/artists");
+  return ref.once("value").then((snapshot) => {
+     var val = snapshot.val();
+     artistIds = artistIds.concat(Object.keys(val));
+     var i;
+    var artists = [];
+    for (i=0; i < artistIds.length; i++){
+      artists.push(val[artistIds[i]]);
+      artists[i].key = artistIds[i];
+    }
+    return artists;
+  });
 };

@@ -967,7 +967,7 @@ A simple example service that returns some data.
     $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
-
+    
     $scope.loadMore = function() {
       if (!$scope.didReachEnd){
         if (!$scope.loading){ $scope.loading = true;}
@@ -993,22 +993,20 @@ A simple example service that returns some data.
         }
     };
 
-    return $scope.artist.$loaded(function() {
-      Auth.$waitForAuth().then(function(authObject) {
-          if (authObject === null || typeof authObject.google === 'undefined') {
-            if ($scope.artist.isPrivate) {
-                $scope.loggedIn = false;
-                return $scope.loading = false;
-            }
-          }
-          
+    return $scope.artist.$loaded(function(value) {
           $scope.loadMore();
-          
           return true;
-      });
-    });       
-  });  
+    }, function(error){
+      if (error.message.indexOf('permission_denied') > -1){
+        $scope.loggedIn = false;
+        return $scope.loading = false;
+      } else {
+        $scope.loading = false;
+        return alert('something went wrong!');
+    }
+    });      
 
+  })
 }).call(this);
 
 (function() {
@@ -1030,7 +1028,7 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").factory("ArtistService", function($firebaseObject, $firebaseArray, FBURL) {
     var artists, ref;
-    ref = new Firebase(FBURL + '/artists').orderByPriority();
+    ref = new Firebase(FBURL + '/public_artists').orderByPriority();
     this.loading = true;
     artists = $firebaseArray(ref);
     return {
