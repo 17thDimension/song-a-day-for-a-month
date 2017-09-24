@@ -600,13 +600,45 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, AccountService, SongService, TransmitService) {
     console.log('ACCOUNT');
+    $scope.limit = 7;
+    $scope.offset = 0;
+    $scope.didReachEnd = false;
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
+
+    $scope.loadMore = function() {
+      console.log('in the loadMore');
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){ $scope.loading = true;}
+        $scope.offset++;
+        SongService.getListWithLimit($scope.limit * $scope.offset, $scope.me.$id, function(songs) {
+          $scope.songs = songs;
+          console.log('here is the callback');
+          console.log($scope.songs);
+          if ($scope.songs.length === Object.keys($scope.me.songs).length ){ $scope.didReachEnd = true;}
+          $scope.loading = false;
+        });
+      }
+    }; 
+
+    $scope.loadAll = function() {
+      if (!$scope.didReachEnd){
+        if (!$scope.loading){
+          $scope.loading = true;
+        }
+        $scope.songs = SongService.getList($scope.me.songs);
+         $scope.songs[$scope.songs.length - 1].$loaded(function() {
+            $scope.loading = false;
+            $scope.didReachEnd = true;
+          });
+        }
+    };
+
     AccountService.refresh(function(myself) {
       $scope.me = myself;
       myself.$bindTo($scope, 'me');
-      return $scope.songs = SongService.getList($scope.me.songs);
+      return $scope.loadMore();
     });
     return $scope.propogate = function() {
       var i, len, ref, results, song;
@@ -935,7 +967,7 @@ A simple example service that returns some data.
     $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
-
+    
     $scope.loadMore = function() {
       if (!$scope.didReachEnd){
         if (!$scope.loading){ $scope.loading = true;}
@@ -961,22 +993,19 @@ A simple example service that returns some data.
         }
     };
 
-    return $scope.artist.$loaded(function() {
-      Auth.$waitForAuth().then(function(authObject) {
-          if (authObject === null || typeof authObject.google === 'undefined') {
-            if ($scope.artist.isPrivate) {
-                $scope.loggedIn = false;
-                return $scope.loading = false;
-            }
-          }
-
+    return $scope.artist.$loaded(function(value) {
           $scope.loadMore();
-
           return true;
-      });
-    });
-  });
-
+    }, function(error){
+      if (error.message.indexOf('permission_denied') > -1){
+        $scope.loggedIn = false;
+        return $scope.loading = false;
+      } else {
+        $scope.loading = false;
+        return alert('something went wrong!');
+    }
+    });      
+  })
 }).call(this);
 
 (function() {
@@ -998,7 +1027,7 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").factory("ArtistService", function($firebaseObject, $firebaseArray, FBURL) {
     var artists, ref;
-    ref = new Firebase(FBURL + '/artists').orderByPriority();
+    ref = new Firebase(FBURL + '/public_artists').orderByPriority();
     this.loading = true;
     artists = $firebaseArray(ref);
     return {
