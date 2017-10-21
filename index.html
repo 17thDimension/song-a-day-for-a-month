@@ -33,7 +33,11 @@
         <button ng-click="toggleLeft()" class="button button-icon icon ion-music-note"></button>
         <button ng-bind="ctrl.nowPlaying.title" ng-click="showSong(ctrl.nowPlaying)" class="button button-light song-title">  </button>
       </div>
-      <div class="title"><a href="#/record" class="button button-icon ion-button ion-mic-c"></a></div>
+
+      <div class="title">
+        <!--<a href="#/record" class="button button-icon ion-button ion-mic-c"></a>-->
+      <input type="range" ng-model="volume" min="0" max="1" step="0.001" ng-change='ctrl.API.setVolume(volume)'>
+      </div>
       <div ng-show="ctrl.playlist.length" class="buttons right">
         <button ng-bind="ctrl.nowPlaying.artist.alias" ng-click="showArtist(ctrl.nowPlaying.artist.key)" class="button button-light song-alias"></button>
       </div>
