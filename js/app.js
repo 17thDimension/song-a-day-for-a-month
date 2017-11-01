@@ -896,6 +896,12 @@ A simple example service that returns some data.
         return ctrl.setNowPlaying(0);
       }
     };
+
+    ctrl.setNewPosition = function($event){
+      currentTime = (event.offsetX / $window.innerWidth) * ctrl.API.totalTime;
+      ctrl.API.seekTime(currentTime/1000, false);
+    };
+
     ctrl.onPlayerReady = function(API) {
       ctrl.API = API;
     };

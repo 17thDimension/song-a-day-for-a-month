@@ -28,7 +28,7 @@
       <canvas id="visualizer" width="1000" height="200"></canvas>
     </videogular>
     <ion-nav-view></ion-nav-view>
-    <ion-footer-bar align-title="center">
+    <ion-footer-bar align-title="center" ng-click="ctrl.setNewPosition($event)">
       <div ng-show="ctrl.playlist.length" class="buttons left">
         <button ng-click="toggleLeft()" class="button button-icon icon ion-music-note"></button>
         <button ng-bind="ctrl.nowPlaying.title" ng-click="showSong(ctrl.nowPlaying)" class="button button-light song-title">  </button>
