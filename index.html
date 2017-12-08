@@ -36,7 +36,6 @@
 
       <div class="title">
         <!--<a href="#/record" class="button button-icon ion-button ion-mic-c"></a>-->
-      <input type="range" ng-model="volume" min="0" max="1" step="0.001" ng-change='ctrl.API.setVolume(volume)'>
       </div>
       <div ng-show="ctrl.playlist.length" class="buttons right">
         <button ng-bind="ctrl.nowPlaying.artist.alias" ng-click="showArtist(ctrl.nowPlaying.artist.key)" class="button button-light song-alias"></button>
