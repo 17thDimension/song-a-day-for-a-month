@@ -1304,7 +1304,7 @@ A simple example service that returns some data.
       console.log(song, 'ssss');
       latest_date = new Date(song.timestamp);
       today = new Date();
-      if (today.getDay() === latest_date.getDay()) {
+      if (today.getDate() === latest_date.getDate()) {
         $scope.song = song;
         return $scope.transmitted = true;
       }
@@ -1851,7 +1851,7 @@ A simple example service that returns some data.
       var latest_date, today;
       latest_date = new Date(song.timestamp);
       today = new Date();
-      if (today.getDay() === latest_date.getDay()) {
+      if (today.te() === latest_date.getDate()) {
         $scope.song = song;
         return $scope.transmitted = true;
       }
