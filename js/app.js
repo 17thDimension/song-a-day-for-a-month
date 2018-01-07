@@ -1932,6 +1932,9 @@ A simple example service that returns some data.
               }
               me.songs[new_id] = true;
               me.last_transmission = new_id;
+              publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
+              publicRef.child('songCount') = me.songs.length;
+              publicRef.$save();
               me.$save();
               return callback(new_id);
             });
