@@ -977,6 +977,7 @@ A simple example service that returns some data.
         $scope.offset++;
         SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
           $scope.songs = songs;
+          console.log(songs, 'songs');
           if ($scope.songs.length === Object.keys($scope.artist.songs).length ){ $scope.didReachEnd = true;}
           $scope.loading = false;
         });
@@ -1880,6 +1881,7 @@ A simple example service that returns some data.
           'key': myself.$id,
           'avatar': myself.avatar || ''
         };
+        console.log('about to call transmit service');
         return TransmitService.transmit(song, function(new_id) {
           var sng;
           $scope.transmitted = true;
@@ -1922,6 +1924,7 @@ A simple example service that returns some data.
         songs.$loaded(function() {
           return AccountService.refresh(function(me) {
             return songs.$add(song).then(function(new_ref) {
+              console.log('in callback of transmit');
               var new_id;
               new_id = new_ref.key();
               if (typeof me.songs === 'undefined') {
@@ -1930,6 +1933,9 @@ A simple example service that returns some data.
               console.log()
               me.songs[new_id] = true;
               me.last_transmission = new_id;
+              var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
+              publicRef.child('songCount').set(Object.keys(me.songs).length);
+              publicRef.$save();
               me.$save();
               return callback(new_id);
             });
