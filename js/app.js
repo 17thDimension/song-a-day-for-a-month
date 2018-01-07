@@ -1332,6 +1332,7 @@ A simple example service that returns some data.
           song['title'] = $scope.transmission.title || 'untitled';
           song['user_id'] = myself.user_id;
           song['timestamp'] = (new Date()).toISOString();
+          song['artist_timestamp'] = myself.$id + '_' +  song.timestamp,
           song['$priority'] = -1 * Date.parse(song.timestamp);
           song['artist'] = {
             'alias': myself.alias || '',
@@ -1872,6 +1873,7 @@ A simple example service that returns some data.
         song['media'] = $scope.transmission.media;
         song['user_id'] = myself.user_id;
         song['timestamp'] = (new Date()).toISOString();
+        song['artist_timestamp'] = myself.$id + '_' +  song.timestamp,
         song['$priority'] = -1 * Date.parse(song.timestamp);
         song['artist'] = {
           'alias': myself.alias || '',

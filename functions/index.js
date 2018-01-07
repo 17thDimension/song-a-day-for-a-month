@@ -30,20 +30,7 @@ admin.initializeApp(functions.config().firebase);
 const rp = require('request-promise');
 var _ = require('lodash');
 
-exports.songmoderator = functions.database.ref('/songs/{songId}').onWrite(event => { //changes to listen for a write to songs
-      const song = event.data.val();
-      console.log('writing to songs');
-      song['timestamp'] = (new Date()).toISOString();
-      if  (song && song.artist && song.artist.key && song.timestamp ){ 
-        var artist_timestamp = song.artist.key + "_" + song.timestamp;
-        console.log('updating to ' + artist_timestamp);
-        return event.data.adminRef.update({
-          artist_timestamp: artist_timestamp, 
-          timestamp: song.timestamp
-        });
-      }
-      return;
-});
+
 
 exports.songmigration = functions.https.onRequest((req, res) => {
   // Fetch all user details.
@@ -91,13 +78,6 @@ function getSongs(songIds = []) {
 	});
 };
 
-
-
-exports.moderator = functions.database.ref('/artists/{artistId}').onWrite(event => { //changes google demo to listen for a write to artists
-      const artist = event.data.val();
-      console.log(event.data.val(), ' is the data in artist write');
-      return event.data.adminRef.root.child('public_artists').child(artist.key).update(artistToPublicArtist(artist));
-});
 
 
 exports.artistmigration = functions.https.onRequest((req, res) => {
