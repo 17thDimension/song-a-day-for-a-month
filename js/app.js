@@ -1853,7 +1853,7 @@ A simple example service that returns some data.
       var latest_date, today;
       latest_date = new Date(song.timestamp);
       today = new Date();
-      if (today.te() === latest_date.getDate()) {
+      if (today.getDate() === latest_date.getDate()) {
         $scope.song = song;
         return $scope.transmitted = true;
       }
