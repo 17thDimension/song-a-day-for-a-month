@@ -973,7 +973,6 @@ A simple example service that returns some data.
     $scope.didReachEnd = false;
     $scope.loading = true;
     $scope.loggedIn = true;
-    
     $scope.loadMore = function() {
       if (!$scope.didReachEnd){
         if (!$scope.loading){ $scope.loading = true;}
@@ -1935,11 +1934,13 @@ A simple example service that returns some data.
               }
               me.songs[new_id] = true;
               me.last_transmission = new_id;
-              var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
-              publicRef.child('songCount').set(Object.keys(me.songs).length);
-              publicRef.$save();
-              me.$save();
-              return callback(new_id);
+              me.$save().then(function(res) {
+                var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
+                publicRef.child('songCount').set(Object.keys(me.songs).length);
+                publicRef.$save().then(function(res){
+                   return callback(new_id);
+                });
+              });
             });
           });
         });
