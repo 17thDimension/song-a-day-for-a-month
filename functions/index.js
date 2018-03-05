@@ -126,3 +126,18 @@ function getArtists(artistIds = []) {
     return artists;
   });
 };
+
+exports.songduplicatecleanup = functions.https.onRequest((req, res) => {
+  var list_of_duplicate_ids = ['-L3CCbTPgXY8JYtnQ9Uk', '-L4DjU89T1X1a_AUCZs2',
+  '-L4DiyX-63TV3vDe_XD-', '-L30myno6Ml9P76p5Aq8', '-L2ngjKQm6vG2J6h6BGb',
+  '-L2ngbgqsZL-aDoXHM8S', '-L2ZD8YKaWKCzvw0l-pn', '-L2ZGUm0kwU7Bco1dvKv',
+  '-L2NfCuqBqTcmCiVAbjb', '-L2Ov7J7LyI2jrKbRHoc', '-L2MjTmms2-O_Cg4HHIF'];
+
+  var db = admin.database();
+  var ref;
+  for (var i = 0; i < list_of_duplicate_ids.length; i++){
+    ref = db.ref('/songs').child(list_of_duplicate_ids[i]);
+    ref.remove();
+  }
+  res.send('good job'); 
+});
