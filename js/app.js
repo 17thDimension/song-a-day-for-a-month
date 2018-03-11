@@ -1893,32 +1893,44 @@ A simple example service that returns some data.
     return $scope.transmit = function(song) {
       $scope.transmitting = true;
       return AccountService.refresh(function(myself) {
-        song = {};
-        song['info'] = $scope.transmission.info || '';
-        song['title'] = $scope.transmission.title || '~untitled';
-        song['media'] = $scope.transmission.media;
-        song['user_id'] = myself.user_id;
-        song['timestamp'] = (new Date()).toISOString();
-        song['artist_timestamp'] = myself.$id + '_' +  song.timestamp,
-        song['$priority'] = -1 * Date.parse(song.timestamp);
-        song['artist'] = {
+        // loop through each artist to create the title
+        // TODO in a promise.map
+        var list_of_names = '';
+        for (var i=  0; i < transmission.collaborators.length; i++) {
+             var ref = new Firebase(FBURL + 'public_artists').child(transmission.collaborators[i]);
+             var obj = $firebaseObject(ref);
+             obj.$loaded().then( function(data){
+               list_of_names += ' ' + data.alias;
+               console.log(list_of_names);
+             });
+        }
+        return TransmitService.createCollab( function(new_id) {
+          console.log(new_id);
+          song = {};
+          song['info'] = $scope.transmission.info || '';
+          song['title'] = $scope.transmission.title || '~untitled';
+          song['media'] = $scope.transmission.media;
+          song['user_id'] = myself.user_id;
+          song['timestamp'] = (new Date()).toISOString();
+          song['artist_timestamp'] = myself.$id + '_' +  song.timestamp,
+          song['$priority'] = -1 * Date.parse(song.timestamp);
+          song['artist'] = {
           'alias': myself.alias || '',
           'key': myself.$id,
           'avatar': myself.avatar || ''
-        };
-        console.log('about to call transmit service');
-        return TransmitService.transmit(song, function(new_id) {
-          var sng;
-          $scope.transmitted = true;
-          sng = SongService.get(new_id);
-          return sng.$loaded(function() {
-            return $scope.song = sng;
+          };
+          console.log('about to call transmit service');
+          return TransmitService.transmit(song, function(new_id) {
+            var sng;
+            $scope.transmitted = true;
+            sng = SongService.get(new_id);
+            return sng.$loaded(function() {
+              return $scope.song = sng;
+            });
           });
         });
       });
     };
-  });
-
 }).call(this);
 
 
@@ -1943,6 +1955,15 @@ A simple example service that returns some data.
       s3Bucket: function() {
         return 'songadays';
       },
+      createCollab : function(title, callback){
+        var ref = new Firebase(FBURL + 'collaboration_songs');
+        var list = $firebaseArray(ref);
+        list.$add({ title: title}).then(function(ref) {
+          var id = ref.key;
+          console.log("added record with id " + id);
+          return callback(id);
+        });
+      },
       transmit: function(song, callback) {
         var songs;
         songs = SongService.some();
@@ -1958,9 +1979,9 @@ A simple example service that returns some data.
               me.songs[new_id] = true;
               me.last_transmission = new_id;
               me.$save().then(function(res) {
-                var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
+                var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id); // TODO i see we need to make this a firebaseObject THEN we can fuck with doing .save on it
                 publicRef.child('songCount')
-                .set(Object.keys(me.songs).length);
+                .set(Object.keys(me.songs).length); //TODO we should be able to use promises here research why not
                    return callback(new_id);
               });
             });
