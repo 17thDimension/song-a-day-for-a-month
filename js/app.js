@@ -43,7 +43,7 @@
 (function() {
   var app;
 
-  app = angular.module(GLOBALS.ANGULAR_APP_NAME, [GLOBALS.ANGULAR_APP_NAME + ".templates", "ionic", "angulartics.google.analytics", "firebase", "angularMoment", "ngS3upload", "com.2fdevs.videogular", "com.2fdevs.videogular.plugins.buffering", "angular-scroll-complete"]).constant('FBURL', 'https://song-a-day.firebaseio.com/');
+  app = angular.module(GLOBALS.ANGULAR_APP_NAME, [GLOBALS.ANGULAR_APP_NAME + ".templates", "ionic", "angulartics.google.analytics", "firebase", "angularMoment", "ngS3upload", "com.2fdevs.videogular", "com.2fdevs.videogular.plugins.buffering", "angular-scroll-complete", "ui.select", "ngSanitize"]).constant('FBURL', 'https://song-a-day.firebaseio.com/');
 
 }).call(this);
 
@@ -1053,6 +1053,18 @@ A simple example service that returns some data.
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
         return artist;
+      },
+      all: function() {
+        console.log('in all');
+        var artistsTrue;
+        console.log('all true');
+        ref = new Firebase(FBURL + '/public_artists');
+        artistsTrue = $firebaseArray(ref);
+        artistsTrue.$loaded(function() {
+          return this.loading = false;
+        });
+        return artistsTrue;
+
       }
     };
   });
@@ -1830,11 +1842,19 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("TransmitCtrl", function($scope, SongService, TransmitService, $state, $timeout, AccountService) {
+  angular.module("songaday").controller("TransmitCtrl", function($scope, SongService, TransmitService, $state, $timeout, AccountService, ArtistService) {
     var reset;
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
+    console.log('hey mufuggas');
+    $scope.artists = ArtistService.all();
+
+    console.log($scope.artists, 'artists in transmit controller');
+    for (artist in $scope.artists){
+      console.log(artist.name);
+    }
+
     $scope.transmission = {
       media: {}
     };
