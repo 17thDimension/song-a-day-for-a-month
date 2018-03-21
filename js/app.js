@@ -707,6 +707,10 @@ A simple example service that returns some data.
         song_ref.remove();
         last_song_ref.remove();
         song.$remove();
+        delete me.songs[song.$id];
+        var public_artist_uri = FBURL + '/public_artists/' + me.$id;
+        var public_artist_ref = new Firebase(public_artist_uri);
+        public_artist_ref.child('songCount').set(Object.keys(me.songs).length);
         return cb();
       },
       logout: function() {
@@ -1298,7 +1302,6 @@ A simple example service that returns some data.
     $rootScope.recording_file_uri = false;
     TransmitService.lastTransmission(function(song) {
       var latest_date, today;
-      console.log(song, 'ssss');
       latest_date = new Date(song.timestamp);
       today = new Date();
       if (today.getDate() === latest_date.getDate()) {
@@ -1934,10 +1937,9 @@ A simple example service that returns some data.
               me.last_transmission = new_id;
               me.$save().then(function(res) {
                 var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
-                publicRef.child('songCount').set(Object.keys(me.songs).length);
-                publicRef.$save().then(function(res){
+                publicRef.child('songCount')
+                .set(Object.keys(me.songs).length);
                    return callback(new_id);
-                });
               });
             });
           });
