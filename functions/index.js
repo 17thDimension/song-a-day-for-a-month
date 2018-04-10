@@ -32,6 +32,30 @@ var _ = require('lodash');
 
 
 
+exports.collaboration_migration = functions.https.onRequest((req, res) => {
+  // Fetch all user details.
+  getSongs().then(songs => {
+    var db = admin.database();
+    var ref = db.ref("/collaboration_songs");
+    // Modified: changes filter to look for songs without essential attributes
+    const parentless_songs = songs.filter(
+        song =>  typeof(song.collaboration_id) === "undefined");
+
+    var song_id;
+    console.log('number of parentless songs is: ', parentless_songs.length);
+    for (var i=0; i< parentless_songs.length; i++) {
+        song_id = parentless_songs[i].key;
+        var songRef = db.ref('/songs').child(song_id);
+        var newCollab = ref.push();
+        newCollab.set({
+          songs: [song_id]
+        });
+        songRef.child('collaboration_id').set(newCollab.key);
+    }
+    res.send('finished migration');
+  });
+});
+
 exports.songmigration = functions.https.onRequest((req, res) => {
   // Fetch all user details.
   getSongs().then(songs => {

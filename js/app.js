@@ -1870,6 +1870,42 @@ A simple example service that returns some data.
         });
       }
     };
+    $scope.saveForArtists = function(artist, collab_key, transmission) {
+      return new Promise(function(resolve, reject) {
+        song = {};
+        song['info'] = $scope.transmission.info || '';
+        song['title'] = $scope.transmission.title || '~untitled';
+        song['media'] = $scope.transmission.media;
+        song['user_id'] = artist.key; // this assumes myself.user_id is the same
+        song['timestamp'] = (new Date()).toISOString();
+        song['artist_timestamp'] = artist.key + '_' +  song.timestamp,
+        song['$priority'] = -1 * Date.parse(song.timestamp);
+        song['collaboration_id'] = collab_key;
+        song['artist'] = {
+        'alias': artist.alias || '',
+        'key': artist.$id,
+        'avatar': artist.avatar || ''
+        };
+        console.log('about to call transmit service');
+        return TransmitService.transmit(song, function(new_id) {
+          var sng;
+          //TODO set scope .transmitted true to be set AFTER we go through the promises
+          sng = SongService.get(new_id);
+          return sng.$loaded(function() {
+            $scope.song = sng;
+              var collabRef = new Firebase(FBURL + 'collaboration_songs').child(new_id);
+              var collabObj = $firebaseObject(collabRef);
+              collabObj.$loaded().then(function(){
+                collabObj.songs.push(sng.key);
+                collabObj.$save().then(function(){
+                  resolve();
+                });
+              });
+          });
+        });
+      })
+
+    }
     reset();
     TransmitService.lastTransmission(function(song) {
       var latest_date, today;
@@ -1895,38 +1931,18 @@ A simple example service that returns some data.
       return AccountService.refresh(function(myself) {
         // loop through each artist to create the title
         // TODO in a promise.map
-        var list_of_names = '';
-        for (var i=  0; i < transmission.collaborators.length; i++) {
-             var ref = new Firebase(FBURL + 'public_artists').child(transmission.collaborators[i]);
-             var obj = $firebaseObject(ref);
-             obj.$loaded().then( function(data){
-               list_of_names += ' ' + data.alias;
-               console.log(list_of_names);
-             });
-        }
-        return TransmitService.createCollab( function(new_id) {
+        return TransmitService.createCollab( '', function(new_id) {
           console.log(new_id);
-          song = {};
-          song['info'] = $scope.transmission.info || '';
-          song['title'] = $scope.transmission.title || '~untitled';
-          song['media'] = $scope.transmission.media;
-          song['user_id'] = myself.user_id;
-          song['timestamp'] = (new Date()).toISOString();
-          song['artist_timestamp'] = myself.$id + '_' +  song.timestamp,
-          song['$priority'] = -1 * Date.parse(song.timestamp);
-          song['artist'] = {
-          'alias': myself.alias || '',
-          'key': myself.$id,
-          'avatar': myself.avatar || ''
-          };
-          console.log('about to call transmit service');
-          return TransmitService.transmit(song, function(new_id) {
-            var sng;
+          // TODO add artist as one of the collaborators
+          // TODO make sure we are using the actual artist object
+          // TODO iterate over each artist
+          var artists = transmission.collaborators;
+          var promises = [];
+          for (var i = 0; i < artists.length; i++) {
+            promises.push($scope.saveForArtists(artist[i], new_id, $scope.transmission));
+          }
+          return Promise.all(promises).then({
             $scope.transmitted = true;
-            sng = SongService.get(new_id);
-            return sng.$loaded(function() {
-              return $scope.song = sng;
-            });
           });
         });
       });
@@ -1957,8 +1973,7 @@ A simple example service that returns some data.
       },
       createCollab : function(title, callback){
         var ref = new Firebase(FBURL + 'collaboration_songs');
-        var list = $firebaseArray(ref);
-        list.$add({ title: title}).then(function(ref) {
+        ref.push().then(function(ref) {
           var id = ref.key;
           console.log("added record with id " + id);
           return callback(id);
@@ -1979,10 +1994,14 @@ A simple example service that returns some data.
               me.songs[new_id] = true;
               me.last_transmission = new_id;
               me.$save().then(function(res) {
-                var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id); // TODO i see we need to make this a firebaseObject THEN we can fuck with doing .save on it
-                publicRef.child('songCount')
-                .set(Object.keys(me.songs).length); //TODO we should be able to use promises here research why not
-                   return callback(new_id);
+                var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
+                var publicObj = $firebaseObject(publicRef);
+                $publicObj.$loaded().then(function() {
+                   publicObj.songCount = Object.keys(me.songs).length;
+                   publicObj.$save().then(function(){
+                      return callback(new_id);
+                   })
+                }) 
               });
             });
           });
