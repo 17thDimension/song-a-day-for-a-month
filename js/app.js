@@ -1870,7 +1870,7 @@ A simple example service that returns some data.
         });
       }
     };
-    $scope.saveForArtists = function(artist, collab_key, transmission) {
+    $scope.saveForArtists = function(artist, collab_key, transmission, is_artist) {
       return new Promise(function(resolve, reject) {
         song = {};
         song['info'] = $scope.transmission.info || '';
@@ -1892,7 +1892,9 @@ A simple example service that returns some data.
           //TODO set scope .transmitted true to be set AFTER we go through the promises
           sng = SongService.get(new_id);
           return sng.$loaded(function() {
-            $scope.song = sng;
+            if (is_artist){
+              $scope.song = sng;
+            }
               var collabRef = new Firebase(FBURL + 'collaboration_songs').child(new_id);
               var collabObj = $firebaseObject(collabRef);
               collabObj.$loaded().then(function(){
@@ -1937,9 +1939,10 @@ A simple example service that returns some data.
           // TODO make sure we are using the actual artist object
           // TODO iterate over each artist
           var artists = transmission.collaborators;
+          artists.push($myself);
           var promises = [];
           for (var i = 0; i < artists.length; i++) {
-            promises.push($scope.saveForArtists(artist[i], new_id, $scope.transmission));
+            promises.push($scope.saveForArtists(artist[i], new_id, $scope.transmission, i === (artists.length - 1));
           }
           return Promise.all(promises).then({
             $scope.transmitted = true;
