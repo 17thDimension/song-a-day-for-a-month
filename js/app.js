@@ -1847,7 +1847,6 @@ A simple example service that returns some data.
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
-    console.log('hey mufuggas');
     $scope.artists = ArtistService.all();
 
     console.log($scope.artists, 'artists in transmit controller');
@@ -1905,9 +1904,9 @@ A simple example service that returns some data.
               });
           });
         });
-      })
+      });
 
-    }
+    };
     reset();
     TransmitService.lastTransmission(function(song) {
       var latest_date, today;
@@ -1942,14 +1941,15 @@ A simple example service that returns some data.
           artists.push($myself);
           var promises = [];
           for (var i = 0; i < artists.length; i++) {
-            promises.push($scope.saveForArtists(artist[i], new_id, $scope.transmission, i === (artists.length - 1));
+            promises.push($scope.saveForArtists(artist[i], new_id, $scope.transmission, i === (artists.length - 1)));
           }
-          return Promise.all(promises).then({
+          return Promise.all(promises).then(function(){
             $scope.transmitted = true;
           });
         });
       });
     };
+  });
 }).call(this);
 
 
