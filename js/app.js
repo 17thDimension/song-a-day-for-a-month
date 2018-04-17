@@ -1725,22 +1725,24 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, SongService) {
-    $scope.songs = SongService.some();
+  angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, CollaborationService) {
+    $scope.songs = CollaborationService.some();
+    // TODO create a SongService method which gets Collaborator songs
     $scope.loading = true;
-    $scope.songs.$loaded(function() {
+    $scope.collab_songs.$loaded(function() {
       console.log('done loading');
       return $scope.loading = false;
     });
     $scope.loadMore = function() {
       $scope.loading = true;
-      return SongService.more(function() {
+      return CollaborationService.more(function() {
         return $scope.loading = false;
       });
     };
     return $scope.playAll = function() {
       var i, len, ref, results, song;
-      ref = $scope.songs;
+      // TODO for every collaboration song, map collabSong.songs  (song) -> enQueue(song)
+      ref = $scope.collab_songs;
       results = [];
       for (i = 0, len = ref.length; i < len; i++) {
         song = ref[i];
@@ -1752,6 +1754,92 @@ A simple example service that returns some data.
 
 }).call(this);
 
+
+
+
+(function() {
+  angular.module("songaday").factory("CollaborationService", function($firebaseObject, $firebaseArray, AccountService, FBURL) {
+    var limit, ref, scroll, scrollRef, songs;
+    limit = 7;
+    ref = new Firebase(FBURL + 'collaboration_songs');
+    scrollRef = new Firebase.util.Scroll(ref, '$priority');
+    scroll = scrollRef.scroll;
+    songs = $firebaseArray(scrollRef);
+    return {
+      some: function() {
+        this.more();
+        return songs;
+      },
+      more: function(cb) {
+        scroll.next(limit);
+        if (cb) {
+          return cb();
+        }
+      },
+      comment: function(song, comment) {
+        var comments, commentsRef, notices, noticesRef, notification;
+        commentsRef = new Firebase(FBURL + 'songs/' + song.$id + '/comments');
+        comments = $firebaseArray(commentsRef);
+        comments.$add(comment);
+        console.log(comment);
+        noticesRef = new Firebase(FBURL + 'notices/' + song.artist.key);
+        notices = $firebaseArray(noticesRef);
+        notification = {};
+        return notices.$loaded(function() {
+          notification.message = comment.author.alias + ' commented on your song ' + song.title;
+          notification.link = song.$id;
+          notification.author = comment.author;
+          notices.$add(notification);
+          return comment = {};
+        });
+      },
+      get: function(songId) {
+        ref = new Firebase(FBURL + '/songs/' + songId);
+        return $firebaseObject(ref);
+      },
+      getLimit: function(artistId, limit) {
+         ref= new Firebase(FBURL + 'songs');
+         query = ref.orderByChild("artist_timestamp")
+               .startAt(artistId)
+               .endAt(artistId+'_9999') //only will give most recent songs assumming that it is before year 9999
+               .limitToLast(limit);
+          return $firebaseArray(query);
+      },
+       getList: function(songList, callback) {
+        var i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
+        songsInOrder = Object.keys(songList).reverse();
+        for (i = 0, len = songsInOrder.length; i < len; i++) {
+          songId = songsInOrder[i];
+          song = this.get(songId);
+          playlist.push(song);
+          if (typeof callback === 'function') {
+            song.$loaded(callback);
+          }
+        }
+        return playlist;
+      },
+      getListWithLimit: function(limit, artistId, callback) {
+        var i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
+
+        songsArray = this.getLimit(artistId, limit);
+        songsArray.$loaded(function() {
+              angular.forEach(songsArray, function(value, key) {
+            playlist.push(value);
+       });
+
+       return callback(playlist);
+     });
+
+
+
+      }
+
+    };
+  });
+
+}).call(this);
 
 /*
 A simple example service that returns some data.
