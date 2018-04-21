@@ -1726,7 +1726,7 @@ A simple example service that returns some data.
 
 (function() {
   angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, CollaborationService) {
-    $scope.songs = CollaborationService.some();
+    $scope.collab_songs = CollaborationService.some();
     // TODO create a SongService method which gets Collaborator songs
     $scope.loading = true;
     $scope.collab_songs.$loaded(function() {
