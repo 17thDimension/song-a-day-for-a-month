@@ -1725,13 +1725,15 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, CollaborationService) {
+  angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, CollaborationService, SongService) {
     $scope.collab_songs = CollaborationService.some();
     // TODO create a SongService method which gets Collaborator songs
     $scope.loading = true;
     $scope.collab_songs.$loaded(function() {
       console.log('done loading');
+      console.log($scope.collab_songs, 'collab songs' );
       return $scope.loading = false;
+
     });
     $scope.loadMore = function() {
       $scope.loading = true;
@@ -1739,6 +1741,12 @@ A simple example service that returns some data.
         return $scope.loading = false;
       });
     };
+
+    $scope.songForKey = function(song_key) {
+      console.log('hello');
+      return SongService.get(song_key);
+    };
+
     return $scope.playAll = function() {
       var i, len, ref, results, song;
       // TODO for every collaboration song, map collabSong.songs  (song) -> enQueue(song)
@@ -1883,6 +1891,7 @@ A simple example service that returns some data.
       },
       get: function(songId) {
         ref = new Firebase(FBURL + '/songs/' + songId);
+        console.log(ref);
         return $firebaseObject(ref);
       },
       getLimit: function(artistId, limit) {
