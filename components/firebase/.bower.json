@@ -22,5 +22,15 @@
     "bower_components",
     "test",
     "tests"
-  ]
+  ],
+  "_release": "4.12.0",
+  "_resolution": {
+    "type": "version",
+    "tag": "v4.12.0",
+    "commit": "0e64c1f441df234c6b344879067ddf8bf31e73e7"
+  },
+  "_source": "https://github.com/firebase/firebase-bower.git",
+  "_target": "^4.12.0",
+  "_originalSource": "firebase",
+  "_direct": true
 }
