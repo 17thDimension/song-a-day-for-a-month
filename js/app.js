@@ -1827,9 +1827,10 @@ A simple example service that returns some data.
         return cb($firebaseArray(array));
       },
       commentOnCollabSong: function(song_key, comment){
+        console.log(comment, ' comment being made');
         return new Promise(function(resolve, reject){
           var comments, commentsRef, notices, noticesRef, notification;
-          var ref = new Firebase(FBURL + '/songs/' + songId);
+          var ref = new Firebase(FBURL + '/songs/' + song_key);
           var songObj = $firebaseObject(ref);
           return songObj.$loaded()
           .then(function(song) {
@@ -1854,10 +1855,14 @@ A simple example service that returns some data.
       comment: function(song, comment) {
         var collabRef = new Firebase(FBURL + 'collaboration_songs/' + song.collaboration_id);
         var collabObj = $firebaseObject(collabRef);
+        var promises = [];
         collabObj.$loaded().then(function() {
            var listOfSongs = []
-           for (var i= 0; i < collabObj.songs.length; i++){
-              promises.push(commentOnCollabSong(collabObj.songs[i]));
+           var keysOfSongs = Object.keys(collabObj.songs);
+           for (var i= 0; i < keysOfSongs.length; i++){
+            var songToComment = collabObj.songs[keyesOfSongs[i]];
+              console.log(songToComment, ' commenting on this song');
+              promises.push(commentOnCollabSong(songToComment, comment));
            }
            return Promise.all(promises)
            .then(function(){
@@ -1933,12 +1938,16 @@ A simple example service that returns some data.
         }
       },
       comment: function(song, comment) {
-        var collabRef = new Firebase(GBURL + 'collaboration_songs/' + song.collaboration_id);
+        var collabRef = new Firebase(FBURL + 'collaboration_songs/' + song.collaboration_id);
         var collabObj = $firebaseObject(collabRef);
+        var promises = [];
         collabObj.$loaded().then(function() {
-           var listOfSongs = []
-           for (var i= 0; i < collabObj.songs.length; i++){
-              promises.push(CollaborationService.commentOnCollabSong(collabObj.songs[i]));
+           var listOfSongs = [];
+           var keysOfSongs = Object.keys(collabObj.songs);
+           for (var i= 0; i < keysOfSongs.length; i++){
+              var songToPush = collabObj.songs[keysOfSongs[i]];
+              console.log(songToPush, ' song to push');
+              promises.push(CollaborationService.commentOnCollabSong(songToPush, comment));
            }
            return Promise.all(promises)
            .then(function(){
@@ -1996,7 +2005,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("TransmitCtrl", function($scope, SongService, TransmitService, $state, $timeout, AccountService, ArtistService, FBURL, $firebaseArray) {
+  angular.module("songaday").controller("TransmitCtrl", function($scope, SongService, TransmitService, $state, $timeout, AccountService, ArtistService, FBURL, $firebaseArray, $firebaseObject) {
     var reset;
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
@@ -2026,8 +2035,7 @@ A simple example service that returns some data.
     };
     $scope.saveForArtists = function(artist, collab_key, transmission, is_artist) {
       return new Promise(function(resolve, reject) {
-        console.log(artist, 'this is what we have for artist');
-        song = {};
+        var song = {};
         song['info'] = $scope.transmission.info || '';
         song['title'] = $scope.transmission.title || '~untitled';
         song['media'] = $scope.transmission.media;
@@ -2041,42 +2049,29 @@ A simple example service that returns some data.
         'key': artist.$id,
         'avatar': artist.avatar || ''
         };
-        console.log('about to call transmit service in save for artists');
-        return TransmitService.transmit(song, function(new_id) {
-          console.log('new song within collab', new_id);
-          var sng;
-          //TODO set scope .transmitted true to be set AFTER we go through the promises
-          sng = SongService.get(new_id);
-          return sng.$loaded(function() {
-            if (is_artist){
-              $scope.song = sng;
-            }
-            //TODO see if songs is null, if it is create them and then create the song 
-            var collabSongs = new Firebase(FBURL + 'collaboration_songs').child(collab_key).child('songs');
-            return collabSongs.once("value", function(snapshot){
-              
-              var collabRef = new Firebase(FBURL + 'collaboration_songs').child(collab_key);
-              if (!snapshot.val()){
-                // create the songs first 
-                console.log('in the first');
-                collabRef.set({songs: 0,
-                               timestamp: sng.timestamp});
-
-              } 
-              // now set the song by  pushing
-                            // TODO why the fuck is my .set() not thenable?
-              var newSongRef = collabRef.child("songs").push();
-              console.log(sng.$id, ' this should be the value');
-              console.log(newSongRef.key(), ' this should be the freaking key');
-              collabRef.child("songs").child(newSongRef.key()).set(sng.$id);
-
-              console.log(' resolving');
-              resolve();
+        var artistRef =  new Firebase(FBURL + 'artists').child(artist.$id);
+        var artistObj = $firebaseObject(artistRef);
+        return artistObj.$loaded(function(artistLoaded){
+          return TransmitService.transmitForArtist(song, artistLoaded, function(new_id) {
+            var sng;
+            sng = SongService.get(new_id);
+            return sng.$loaded(function() {
+              if (is_artist){
+                $scope.song = sng;
+              }
+              var collabSongs = new Firebase(FBURL + 'collaboration_songs').child(collab_key).child('songs');
+                var collabRef = new Firebase(FBURL + 'collaboration_songs').child(collab_key);
+                var newSongRef = collabRef.child("songs").push();
+                collabRef.child("songs").child(newSongRef.key()).set(sng.$id, function(err){
+                  if (err){return reject();}
+                  return resolve();
+                });
+                resolve();
             });
           });
         });
-      });
 
+      });
     };
     reset();
     TransmitService.lastTransmission(function(song) {
@@ -2101,18 +2096,10 @@ A simple example service that returns some data.
     return $scope.transmit = function(song) {
       $scope.transmitting = true;
       return AccountService.refresh(function(myself) {
-        // loop through each artist to create the title
-        // TODO in a promise.map
         return TransmitService.createCollab( '', function(new_id) {
-          console.log(new_id, ' new collab');
-          // TODO add artist as one of the collaborators
-          // TODO make sure we are using the actual artist object
-          // TODO iterate over each artist
           var artists = [];
           if ($scope.transmission.collaborators){
           var objKeys = Object.keys($scope.transmission.collaborators);
-          console.log(objKeys);
-          console.log($scope.transmission.collaborators["0"]);
           
           for (var i = 0; i < objKeys.length; i++){
              artists.push($scope.transmission.collaborators[objKeys[i]]);
@@ -2120,15 +2107,34 @@ A simple example service that returns some data.
           }
 
           artists.push(myself);
-          console.log(artists, ' here is artists');
           var promises = [];
           for (var i = 0; i < artists.length; i++) {
-            console.log(artists[i], ' ith artist');
             promises.push($scope.saveForArtists(artists[i], new_id, $scope.transmission, i === (artists.length - 1)));
           }
-          return Promise.all(promises).then(function(){
-            console.log('went through the promises');
+          return Promise.all(promises)
+          .then(function(){
+             return new Promise(function(resolve, reject) {
+                var collabRef = new Firebase(FBURL + 'collaboration_songs').child(collab_key);
+                var collabObj = $firebaseObject(collabRef);
+                collabObj.$loaded(function() {
+                    var keys = Object.keys(collabObj.songs);
+                    if (!keys || keys.length === 0 || !collabObj.songs[keys[0]]){return reject();}
+                    var songRef = new Firebase(FBURL + 'songs').child(collabObj.songs[keys[0]]);
+                    var songObj = $firebaseObject(songRef);
+                    songObj.$loaded(function(){
+                      collabRef.child('timestamp').set( songObj.timestamp, function(err) {
+                        if (err){return reject();}
+                        resolve();
+                      });
+                    });
+                });
+             });
+          })
+          .then(function(){
             $scope.transmitted = true;
+          })
+          .catch(function(err){
+             //TODO let em know
           });
         });
       });
@@ -2197,6 +2203,34 @@ A simple example service that returns some data.
                    })
                 }) 
               });
+            });
+          });
+        });
+      },
+      transmitForArtist: function(song, artist, callback) {
+        var songs;
+        songs = SongService.some();
+        songs.$loaded(function() {
+          var me = artist;
+          return songs.$add(song).then(function(new_ref) {
+            console.log('in callback of transmit');
+            var new_id;
+            new_id = new_ref.key();
+            if (typeof me.songs === 'undefined') {
+              me.songs = {};
+            }
+            me.songs[new_id] = true;
+            me.last_transmission = new_id;
+            console.log(me, ' me data');
+            me.$save().then(function(res) {
+              var publicRef = new Firebase(FBURL + 'public_artists').child(me.$id);
+              var publicObj = $firebaseObject(publicRef);
+              publicObj.$loaded().then(function() {
+                 publicObj.songCount = Object.keys(me.songs).length;
+                 publicObj.$save().then(function(){
+                    return callback(new_id);
+                 })
+              }) 
             });
           });
         });
