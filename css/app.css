@@ -19,6 +19,9 @@ loader {
 .hide {
   opacity: 0; }
 
+.collab_song {
+}
+
 audio {
   opacity: 50%; }
 
