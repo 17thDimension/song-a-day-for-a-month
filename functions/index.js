@@ -47,9 +47,9 @@ exports.collaboration_migration = functions.https.onRequest((req, res) => {
         song_id = parentless_songs[i].key;
         var songRef = db.ref('/songs').child(song_id);
         var newCollab = ref.push();
-        newCollab.set({
-          songs: [song_id]
-        });
+        var newSongRef = newCollab.child('songs').push();
+        newCollab.child('songs').child(newSongRef.key.set(song_id);
+        newCollab.child('timestamp').set(parentless_songs[i].timestamp);
         songRef.child('collaboration_id').set(newCollab.key);
     }
     res.send('finished migration');
@@ -73,6 +73,7 @@ exports.collaboration_timestamp_migration = functions.https.onRequest((req, res)
     res.send('finished migration');
   });
 });
+
 
 exports.songmigration = functions.https.onRequest((req, res) => {
   // Fetch all user details.
@@ -118,6 +119,25 @@ function getSongs(songIds = []) {
 	  }
 	  return songs;
 	});
+};
+
+/**
+ * Returns the list of all collab songs
+ */
+function getCollaborationSongs(songIds = []) {
+  var db = admin.database();
+  var ref = db.ref("/collaboration_songs");
+  return ref.once("value").then((snapshot) => {
+     var val = snapshot.val();
+     songIds = songIds.concat(Object.keys(val));
+     var i;
+      var songs = [];
+    for (i=0; i < songIds.length; i++){
+      songs.push(val[songIds[i]]);
+      songs[i].key = songIds[i];
+    }
+    return songs;
+  });
 };
 
 
@@ -170,8 +190,8 @@ function getArtists(artistIds = []) {
 };
 
 exports.songduplicatecleanup = functions.https.onRequest((req, res) => {
-  var list_of_duplicate_ids = ['-LB4ev2f_fiv_y7rCpZ2', '-LAqKAGcNuM3lvfD4T-K',  '-LB3mL9aJ5Ghr5V5fGUB'];
-
+  var list_of_duplicate_ids = ['-LBt3GNEKQ0Ky3fq95u4'];
+  console.log(list_of_duplicate_ids);
   var db = admin.database();
   var ref;
   for (var i = 0; i < list_of_duplicate_ids.length; i++){

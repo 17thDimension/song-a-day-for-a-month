@@ -731,7 +731,7 @@ A simple example service that returns some data.
           } else {
             var objKeys = Object.keys(data);
             for (var i=0; i< objKeys.length; i++){
-              if (data[objKeys[i]].key === song.key) {
+              if (data[objKeys[i]] === song.$id) {
                 //TODO re add then promise
                 collab_songs_ref.child(objKeys[i]).remove();
                 return cb();
@@ -2114,7 +2114,7 @@ A simple example service that returns some data.
           return Promise.all(promises)
           .then(function(){
              return new Promise(function(resolve, reject) {
-                var collabRef = new Firebase(FBURL + 'collaboration_songs').child(collab_key);
+                var collabRef = new Firebase(FBURL + 'collaboration_songs').child(new_id);
                 var collabObj = $firebaseObject(collabRef);
                 collabObj.$loaded(function() {
                     var keys = Object.keys(collabObj.songs);
@@ -2134,7 +2134,8 @@ A simple example service that returns some data.
             $scope.transmitted = true;
           })
           .catch(function(err){
-             //TODO let em know
+            console.log(err);
+            alert("An error occurred creating your upload. Please try again.");
           });
         });
       });
