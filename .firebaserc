@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "firebase-song-a-day"
+    "live": "firebase-song-a-day"
   }
 }
+

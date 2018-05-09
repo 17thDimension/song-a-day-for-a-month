@@ -608,14 +608,11 @@ A simple example service that returns some data.
     $scope.s3Bucket = TransmitService.s3Bucket();
 
     $scope.loadMore = function() {
-      console.log('in the loadMore');
       if (!$scope.didReachEnd){
         if (!$scope.loading){ $scope.loading = true;}
         $scope.offset++;
         SongService.getListWithLimit($scope.limit * $scope.offset, $scope.me.$id, function(songs) {
           $scope.songs = songs;
-          console.log('here is the callback');
-          console.log($scope.songs);
           if ($scope.songs.length === Object.keys($scope.me.songs).length ){ $scope.didReachEnd = true;}
           $scope.loading = false;
         });
@@ -2192,6 +2189,7 @@ A simple example service that returns some data.
               if (typeof me.songs === 'undefined') {
                 me.songs = {};
               }
+              console.log()
               me.songs[new_id] = true;
               me.last_transmission = new_id;
               me.$save().then(function(res) {
