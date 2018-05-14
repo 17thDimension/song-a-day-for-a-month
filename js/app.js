@@ -663,10 +663,12 @@ A simple example service that returns some data.
 
 (function() {
   angular.module("songaday").factory("AccountService", function($rootScope, $firebaseArray, $firebaseObject, Auth, FBURL) {
-    var loading, me, ref;
+    var loading, me, ref, service;
     ref = new Firebase(FBURL);
     loading = true;
+    service = this;
     me = {};
+
     return {
       loggedIn: function() {
         return console.log(auth);
@@ -701,7 +703,41 @@ A simple example service that returns some data.
       mySelf: function() {
         return me;
       },
+      remove_song_for_artist: function(song) {
+        return new Promise(function(resolve, reject) {
+          var c_song_ref = new Firebase(FBURL + 'songs').child(song);
+          var c_song_obj = $firebaseObject(c_song_ref);
+          c_song_obj.$loaded(function(song) {
+            var artistRef = new Firebase(FBURL + 'artists').child(song.artist.key);
+            var artist = $firebaseObject(artistRef);
+            artist.$loaded(function(artist) {
+              // Note: this assumes that the collaboration song is being handled outside this function
+              var last_song_ref, last_song_uri, song_ref, song_uri, collaboration_id, collab_ref, song_key;
+              song_uri = FBURL + '/artists/' + artist.$id + '/songs/' + song.$id;
+              last_song_uri = FBURL + '/artists/' + artist.$id + '/last_transmission/';
+              song_ref = new Firebase(song_uri);
+              last_song_ref = new Firebase(last_song_uri);
+              song_ref.remove();
+              last_song_ref.remove();
+              song.$remove().then(function(ref){
+                delete artist.songs[song.$id]; // TODO im not sure if this actual saves the artist on the server
+                var public_artist_uri = FBURL + '/public_artists/' + artist.$id;
+                var public_artist_ref = new Firebase(public_artist_uri);
+                public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
+                  if (err) {reject();}
+                  resolve();
+                });
+              }, function(error){
+                  reject();
+              });
+            });
+          });
+        });
+
+      },
+
       remove_song: function(song, cb) {
+        var accountService = this;
         var last_song_ref, last_song_uri, song_ref, song_uri, collaboration_id, collab_ref, song_key;
         collaboration_id = song.collaboration_id;
         song_uri = FBURL + '/artists/' + me.$id + '/songs/' + song.$id;
@@ -716,23 +752,30 @@ A simple example service that returns some data.
         var public_artist_ref = new Firebase(public_artist_uri);
         public_artist_ref.child('songCount').set(Object.keys(me.songs).length);
         collab_ref = new Firebase(FBURL + 'collaboration_songs').child(collaboration_id);
-        collab_songs_ref = new Firebase(FBURL + 'collaboration_songs').child(collaboration_id).child('songs');
+        collab_songs_ref = new Firebase(FBURL + 'collaboration_songs').child(collaboration_id);
         var collab_obj = $firebaseObject(collab_songs_ref);
-        console.log('in remove song');
         return collab_songs_ref.once("value", function(dataValue){
-          console.log(dataValue);
           var data = dataValue.val();
-          console.log(data, ' doesnt have songs');
-          if (Object.keys(data).length === 1) {
-            console.log('should be deleting the collab now');
-            collab_ref.remove();
-            return cb();
-
+          // If author of song, remove the collaboration song's children and the collab song.
+          if (data.author_id === me.$id) {
+            var promises = [];
+            var objKeys = Object.keys(data.songs);
+            for (var i=0; i< objKeys.length; i++) {
+              // don't need to delete artists song if we are author
+              // and will be deleting the whole collab song
+              if (song.$id !== data.songs[objKeys[i]]) {
+                  promises.push(accountService.remove_song_for_artist(data.songs[objKeys[i]]));
+              } 
+            }
+            return Promise.all(promises)
+            .then(function(res) {
+               collab_ref.remove();
+               return cb();
+            });
           } else {
-            var objKeys = Object.keys(data);
-            for (var i=0; i< objKeys.length; i++){
-              if (data[objKeys[i]] === song.$id) {
-                //TODO re add then promise
+            var objKeys = Object.keys(data.songs);
+            for (var i=0; i< objKeys.length; i++) {
+              if (data.songs[objKeys[i]] === song.$id) {
                 collab_songs_ref.child(objKeys[i]).remove();
                 return cb();
               }
@@ -1067,7 +1110,6 @@ A simple example service that returns some data.
     artists = $firebaseArray(ref);
     return {
       some: function() {
-        console.log('in some');
         artists.$loaded(function() {
           return this.loading = false;
         });
@@ -1080,9 +1122,7 @@ A simple example service that returns some data.
         return artist;
       },
       all: function() {
-        console.log('in all');
         var artistsTrue;
-        console.log('all true');
         ref = new Firebase(FBURL + '/public_artists');
         artistsTrue = $firebaseArray(ref);
         artistsTrue.$loaded(function() {
@@ -1422,7 +1462,6 @@ A simple example service that returns some data.
     $scope.revoke = function() {
       if ($scope.song) {
         return AccountService.remove_song($scope.song, function() {
-          console.log('hello');
           return reset();
         });
       }
@@ -2059,14 +2098,25 @@ A simple example service that returns some data.
               if (is_artist){
                 $scope.song = sng;
               }
+              console.log(new_id, ' song just created');
               var collabSongs = new Firebase(FBURL + 'collaboration_songs').child(collab_key).child('songs');
                 var collabRef = new Firebase(FBURL + 'collaboration_songs').child(collab_key);
                 var newSongRef = collabRef.child("songs").push();
-                collabRef.child("songs").child(newSongRef.key()).set(sng.$id, function(err){
+                collabRef.child("songs").child(newSongRef.key()).set(sng.$id, function(err) {
                   if (err){return reject();}
-                  return resolve();
+                  if (is_artist) {
+                     collabRef.child("author_id").set(artist.$id, function(err){ 
+                         if (err){
+                          console.log('error setting author id', err);
+                          return reject();}
+                         console.log("resolving as author");
+                         return resolve();
+                     });
+                  } else {
+                    console.log("resolving as non artist");
+                    return resolve();
+                  }
                 });
-                resolve();
             });
           });
         });
@@ -2123,7 +2173,9 @@ A simple example service that returns some data.
                     var songObj = $firebaseObject(songRef);
                     songObj.$loaded(function(){
                       collabRef.child('timestamp').set( songObj.timestamp, function(err) {
-                        if (err){return reject();}
+                        if (err){
+                          console.log(err, ' error setting timestamp');
+                          return reject();}
                         resolve();
                       });
                     });
@@ -2131,6 +2183,7 @@ A simple example service that returns some data.
              });
           })
           .then(function(){
+
             $scope.transmitted = true;
           })
           .catch(function(err){
