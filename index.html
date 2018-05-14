@@ -19,9 +19,9 @@
       GLOBALS = {"ANGULAR_APP_NAME":"songaday","BUNDLE_NAME":"SongADay","BUNDLE_VERSION":"3.4.0","CODE_VERSION":"644ffa27f7be8fab1ff28049f23d4d33be155463","DEPLOY_TIME":1436240694370,"ENV":"development","ROLLBAR_SOURCEMAPS_URL_PREFIX":"https://songadayforamonth.com","WEINRE_ADDRESS":"192.168.1.17:31173"};
 
     </script>
-    <script src="js/vendor.js?v=infinite"></script>
-    <script src="js/app_templates.js?v=july2017bbyweloveyew"></script>
-    <script src="js/app.js?v=omnomnom"></script>
+    <script src="js/vendor.min.js?v=december2017"></script>
+    <script src="js/app_templates.js?v=jamuary2almostfebruaryfam"></script>
+    <script src="js/app.js?v=jamuary2018bbygurlrecords"></script>
   </head>
   <body ng-controller="AppCtrl as ctrl" ng-cloak>
     <videogular vg-player-ready="ctrl.onPlayerReady($API)" vg-complete="ctrl.next()" class="cinema">
@@ -35,7 +35,10 @@
         <button ng-click="toggleLeft()" class="button button-icon icon ion-music-note"></button>
         <button ng-bind="ctrl.nowPlaying.title" ng-click="showSong(ctrl.nowPlaying)" class="button button-light song-title">  </button>
       </div>
-      <div class="title"><a href="#/record" class="button button-icon ion-button ion-mic-c"></a></div>
+
+      <div class="title">
+        <!--<a href="#/record" class="button button-icon ion-button ion-mic-c"></a>-->
+      </div>
       <div ng-show="ctrl.playlist.length" class="buttons right">
         <button ng-bind="ctrl.nowPlaying.artist.alias" ng-click="showArtist(ctrl.nowPlaying.artist.key)" class="button button-light song-alias"></button>
       </div>
