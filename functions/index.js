@@ -208,20 +208,17 @@ function getArtists(artistIds = []) {
 };
 
 exports.songduplicatecleanup = functions.https.onRequest((req, res) => {
-  var list_of_duplicate_ids = ['-LCRdsOYuvbqsptO9oZe', '-LCRdP9sLbyo4zWizgTi', '-LCRd2amMlEQWE8y4a3E', '-LCRcG51OjWtRPuY7z5w', 
-  '-LCQyH-mDK3S4knCvy21', '-LCQxzAvpqk8UFFsIAFp', '-LCQxh3wFjCZ4bWOUMD8', '-LCQwoQj-SNRgY_olg6G', '-LCQwF5PKF6qKlhL9nZY',
-  '-LCQv67fyQnjFLs02GtG', '-LCQuPXbD7cCkMCyOzVo', '-LCQtrg_ytscmm9Xkm3V', '-LCQtEIe6DOkK21ut9zI', '-LCQs_BQtzi6U6LmeF2H',
-  '-LCQrL2RhboWkhssh7FZ', '-LCQqVPfjBJfSHSqj8JQ'];
-  console.log(list_of_duplicate_ids);
+  var list_of_duplicate_ids = [ '-LD-2nb81w7DfdGzIChw', '-LD-0cJA1PxD1stWdymt', '-LD-07nQmdEo85WgzB-7', '-LD-2nbBgCIapbCnaxa2', '-LD-0cJHj4n98F68pbNf', '-LD-07nMdcTytwJD3ITP'];
   var db = admin.database();
-  var ref, collabRef;
   for (var i = 0; i < list_of_duplicate_ids.length; i++){
-    ref = db.ref('/songs').child(list_of_duplicate_ids[i]);
+    var ref = db.ref('/songs').child(list_of_duplicate_ids[i]);
     return ref.once("value").then((snapshot) => {
      var val = snapshot.val();
-      collabRef = db.ref('/collaboration_songs').child(val.collaboration_id);
-      ref.remove();
-      collabRef.remove();
+      console.log(val, ' val');
+      var collabRef = db.ref('/collaboration_songs').child(val.collaboration_id);
+      collabRef.remove().then(function(res){
+         ref.remove();
+      });
     });
 
   }
