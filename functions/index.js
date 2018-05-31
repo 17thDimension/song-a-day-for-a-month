@@ -38,9 +38,9 @@ exports.collaboration_migration = functions.https.onRequest((req, res) => {
     var db = admin.database();
     var ref = db.ref("/collaboration_songs");
     // Modified: changes filter to look for songs without essential attributes
-    const parentless_songs = songs.filter(
-        song =>  typeof(song.collaboration_id) === "undefined");
-
+    //const parentless_songs = songs.filter(
+      //  song =>  typeof(song.collaboration_id) === "undefined");
+    const parentless_songs = songs;
     var song_id;
     console.log('number of parentless songs is: ', parentless_songs.length);
     for (var i=0; i< parentless_songs.length; i++) {
@@ -48,9 +48,27 @@ exports.collaboration_migration = functions.https.onRequest((req, res) => {
         var songRef = db.ref('/songs').child(song_id);
         var newCollab = ref.push();
         var newSongRef = newCollab.child('songs').push();
-        newCollab.child('songs').child(newSongRef.key.set(song_id);
+        newCollab.child('songs').child(newSongRef.key).set(song_id);
         newCollab.child('timestamp').set(parentless_songs[i].timestamp);
         songRef.child('collaboration_id').set(newCollab.key);
+    }
+    res.send('finished migration');
+  });
+});
+
+exports.collaboration_clean_up = functions.https.onRequest((req, res) => {
+  // Fetch all user details.
+  getCollaborationSongs().then(songs => {
+    // Modified: changes filter to look for songs without essential attributes
+    const songless_songs = songs;
+    var db = admin.database();
+
+    var song_id;
+    console.log('number of parentless songs is: ', songless_songs.length);
+    for (var i=0; i< songless_songs.length; i++) {
+
+         var collabRef = db.ref('/collaboration_songs').child(songless_songs[i].key);
+         collabRef.remove();
     }
     res.send('finished migration');
   });
@@ -190,13 +208,19 @@ function getArtists(artistIds = []) {
 };
 
 exports.songduplicatecleanup = functions.https.onRequest((req, res) => {
-  var list_of_duplicate_ids = ['-LBt3GNEKQ0Ky3fq95u4'];
-  console.log(list_of_duplicate_ids);
+  var list_of_duplicate_ids = [ '-LD-2nb81w7DfdGzIChw', '-LD-0cJA1PxD1stWdymt', '-LD-07nQmdEo85WgzB-7', '-LD-2nbBgCIapbCnaxa2', '-LD-0cJHj4n98F68pbNf', '-LD-07nMdcTytwJD3ITP'];
   var db = admin.database();
-  var ref;
   for (var i = 0; i < list_of_duplicate_ids.length; i++){
-    ref = db.ref('/songs').child(list_of_duplicate_ids[i]);
-    ref.remove();
+    var ref = db.ref('/songs').child(list_of_duplicate_ids[i]);
+    return ref.once("value").then((snapshot) => {
+     var val = snapshot.val();
+      console.log(val, ' val');
+      var collabRef = db.ref('/collaboration_songs').child(val.collaboration_id);
+      collabRef.remove().then(function(res){
+         ref.remove();
+      });
+    });
+
   }
   res.send('good job'); 
 });
