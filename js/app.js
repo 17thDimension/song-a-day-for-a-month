@@ -607,8 +607,8 @@ A simple example service that returns some data.
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
     // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+    $scope.isSongLast = function(collabSongs, song) {
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -1072,8 +1072,10 @@ A simple example service that returns some data.
       }
     };
        // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+       // TODO we need to call this function with the actual song which is not on the scope variable here
+    $scope.isSongLast = function(collabSongs, song) {
+      console.log('is song last, ', collabSongs[collabSongs.length - 1].$value === song.$id);
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -1810,8 +1812,8 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading, FBURL, $firebaseArray) {
     // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+    $scope.isSongLast = function(collabSongs, song) {
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -2110,8 +2112,9 @@ A simple example service that returns some data.
     })
 
     // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+    $scope.isSongLast = function(collabSongs, song) {
+          console.log('is song last, ', collabSongs[collabSongs.length - 1].$value === song.$id);
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
