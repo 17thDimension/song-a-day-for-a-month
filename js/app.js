@@ -302,6 +302,21 @@
 }).call(this);
 
 (function() {
+angular.module('songaday').directive('myUiSelect', function() {
+  return {
+    require: 'uiSelect',
+    link: function(scope, element, attrs, $select) {
+      scope.closeDropDown = function() {
+        $select.close();
+        $scope.uiSelectActive = false;
+      }
+    }
+  };
+});
+}).call(this);
+
+
+(function() {
   angular.module('songaday').directive('enterSubmit', function() {
     return {
       restrict: 'A',
@@ -607,8 +622,8 @@ A simple example service that returns some data.
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
     // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+    $scope.isSongLast = function(collabSongs, song) {
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -730,23 +745,30 @@ A simple example service that returns some data.
               last_song_uri = FBURL + '/artists/' + artist.$id + '/last_transmission/';
               song_ref = new Firebase(song_uri);
               last_song_ref = new Firebase(last_song_uri);
-              song_ref.remove();
-              last_song_ref.remove();
-              song.$remove().then(function(ref){
-                delete artist.songs[song.$id]; // TODO im not sure if this actual saves the artist on the server
-                var public_artist_uri = FBURL + '/public_artists/' + artist.$id;
-                var public_artist_ref = new Firebase(public_artist_uri);
-                public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
-                  if (err) {reject();}
-                  resolve();
-                });
-              }, function(error){
-                  reject();
-              });
+              song_ref.remove(function(err){
+                if (err) {
+                  return reject();
+                }
+                last_song_ref.remove(function(err){
+                  if (err) {
+                    return reject();
+                  }
+                  song.$remove().then(function(ref){
+                      delete artist.songs[song.$id]; // TODO im not sure if this actual saves the artist on the server
+                      var public_artist_uri = FBURL + '/public_artists/' + artist.$id;
+                      var public_artist_ref = new Firebase(public_artist_uri);
+                      public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
+                        if (err) {reject();}
+                        resolve();
+                      });
+                    }, function(error){
+                      reject();
+                  });
+                }); 
+              }); 
             });
           });
         });
-
       },
 
       remove_song: function(song, cb) {
@@ -782,15 +804,17 @@ A simple example service that returns some data.
             }
             return Promise.all(promises)
             .then(function(res) {
-               collab_ref.remove();
-               return cb();
+               collab_ref.remove(function(err){
+                return cb();
+               });
             });
           } else {
             var objKeys = Object.keys(data.songs);
             for (var i=0; i< objKeys.length; i++) {
               if (data.songs[objKeys[i]] === song.$id) {
-                collab_songs_ref.child(objKeys[i]).remove();
-                return cb();
+                collab_songs_ref.child(objKeys[i]).remove(function(err){
+                    return cb();
+                });
               }
             }
           }
@@ -1072,8 +1096,10 @@ A simple example service that returns some data.
       }
     };
        // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+       // TODO we need to call this function with the actual song which is not on the scope variable here
+    $scope.isSongLast = function(collabSongs, song) {
+      console.log('is song last, ', collabSongs[collabSongs.length - 1].$value === song.$id);
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -1810,8 +1836,8 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading, FBURL, $firebaseArray) {
     // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+    $scope.isSongLast = function(collabSongs, song) {
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -2098,7 +2124,7 @@ A simple example service that returns some data.
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
     $scope.s3Bucket = TransmitService.s3Bucket();
-
+    $scope.uiSelectActive = false;
     $scope.artists = ArtistService.all();
     $scope.artists.$loaded(function(artistArr){
           $scope.artists =  artistArr.filter(
@@ -2110,8 +2136,9 @@ A simple example service that returns some data.
     })
 
     // boilerplate for song item, should refactor
-    $scope.isSongLast = function(collabSongs) {
-      return collabSongs[collabSongs.length - 1].$value === $scope.song.$id;
+    $scope.isSongLast = function(collabSongs, song) {
+          console.log('is song last, ', collabSongs[collabSongs.length - 1].$value === song.$id);
+      return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
     $scope.songForKey = function(song_key) {
@@ -2126,6 +2153,10 @@ A simple example service that returns some data.
         return $firebaseArray(songsRef);
       }
     };
+
+    $scope.setUiSelectActive = function() {
+      $scope.uiSelectActive = true;
+    }
 
     $scope.transmission = {
       media: {}
