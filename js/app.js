@@ -613,7 +613,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, FBURL, AccountService, SongService, TransmitService) {
+  angular.module("songaday").controller("AccountCtrl", function($scope,$firebaseArray, $stateParams, FBURL, AccountService, SongService, TransmitService) {
     console.log('ACCOUNT');
     $scope.limit = 7;
     $scope.offset = 0;
@@ -633,6 +633,7 @@ A simple example service that returns some data.
     };
 
     $scope.getSongsFromCollab = function(collaboration) {
+      console.log($firebaseArray);
       if (collaboration) {
         var songsRef =  new Firebase(FBURL + 'collaboration_songs').child(collaboration).child('songs');
         return $firebaseArray(songsRef);
@@ -1176,6 +1177,9 @@ A simple example service that returns some data.
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
+        artist.$watch((data)=>{
+          console.log(data,'data');
+        })
         return artist;
       },
       all: function() {
