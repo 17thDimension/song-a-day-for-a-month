@@ -613,7 +613,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, FBURL, AccountService, SongService, TransmitService) {
+  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, FBURL, $firebaseArray, AccountService, SongService, TransmitService) {
     console.log('ACCOUNT');
     $scope.limit = 7;
     $scope.offset = 0;
