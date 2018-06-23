@@ -745,21 +745,25 @@ A simple example service that returns some data.
               last_song_uri = FBURL + '/artists/' + artist.$id + '/last_transmission/';
               song_ref = new Firebase(song_uri);
               last_song_ref = new Firebase(last_song_uri);
-              song_ref.remove(function(err){
+              song_ref.remove(function(err) {
                 if (err) {
                   return reject();
                 }
-                last_song_ref.remove(function(err){
+                last_song_ref.remove(function(err) {
                   if (err) {
                     return reject();
                   }
-                  song.$remove().then(function(ref){
-                      delete artist.songs[song.$id]; // TODO im not sure if this actual saves the artist on the server
-                      var public_artist_uri = FBURL + '/public_artists/' + artist.$id;
-                      var public_artist_ref = new Firebase(public_artist_uri);
-                      public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
-                        if (err) {reject();}
-                        resolve();
+                  song.$remove().then(function(ref) {
+                      delete artist.songs[song.$id]; 
+                      artist.$save().then(function(ref) {
+                        var public_artist_uri = FBURL + '/public_artists/' + artist.$id;
+                        var public_artist_ref = new Firebase(public_artist_uri);
+                        public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
+                          if (err) {reject();}
+                          resolve();
+                        });
+                      }, function(err) {
+                          reject();
                       });
                     }, function(error){
                       reject();
@@ -1076,7 +1080,6 @@ A simple example service that returns some data.
 
 (function() {
   angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
-    // TODO add a function to get collaboration from collaboration id
     $scope.artist = ArtistService.get($stateParams.artistId);
     $scope.limit = 7;
     $scope.offset = 0;
@@ -1089,16 +1092,13 @@ A simple example service that returns some data.
         $scope.offset++;
         SongService.getListWithLimit($scope.limit * $scope.offset, $scope.artist.$id, function(songs) {
           $scope.songs = songs;
-          console.log(songs, 'songs');
           if ($scope.songs.length === Object.keys($scope.artist.songs).length ){ $scope.didReachEnd = true;}
           $scope.loading = false;
         });
       }
     };
        // boilerplate for song item, should refactor
-       // TODO we need to call this function with the actual song which is not on the scope variable here
     $scope.isSongLast = function(collabSongs, song) {
-      console.log('is song last, ', collabSongs[collabSongs.length - 1].$value === song.$id);
       return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
@@ -1309,7 +1309,6 @@ A simple example service that returns some data.
       return $scope.songs = SongService.getList($scope.playlist.songs);
     });
     return $scope.playAll = function() {
-      console.log('in the play');
       var i, len, ref, results, song;
       ref = $scope.songs;
       results = [];
@@ -1835,7 +1834,7 @@ A simple example service that returns some data.
 
 (function() {
   angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading, FBURL, $firebaseArray) {
-    // boilerplate for song item, should refactor
+    // TODO boilerplate for song item, should refactor
     $scope.isSongLast = function(collabSongs, song) {
       return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
@@ -1867,11 +1866,8 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").controller("SongIndexCtrl", function($state, $scope, CollaborationService, SongService, $firebaseArray) {
     $scope.collab_songs = CollaborationService.some();
-    // TODO create a SongService method which gets Collaborator songs
     $scope.loading = true;
     $scope.collab_songs.$loaded(function() {
-      console.log('done loading');
-      console.log($scope.collab_songs, 'collab songs' );
       return $scope.loading = false;
 
     });
@@ -1899,7 +1895,6 @@ A simple example service that returns some data.
     };
     return $scope.playAll = function() {
       var i, len, ref, results, song;
-      // TODO for every collaboration song, map collabSong.songs  (song) -> enQueue(song)
       ref = $scope.collab_songs;
       results = [];
       for (i = 0, len = ref.length; i < len; i++) {
@@ -1922,7 +1917,6 @@ A simple example service that returns some data.
     var offset = 1;
     ref = new Firebase(FBURL + 'collaboration_songs');
 
-    console.log('in the collab');
     return {
       some: function() {
             var array = ref.orderByChild("timestamp")
@@ -1941,7 +1935,6 @@ A simple example service that returns some data.
         return cb($firebaseArray(array));
       },
       commentOnCollabSong: function(song_key, comment){
-        console.log(comment, ' comment being made');
         return new Promise(function(resolve, reject){
           var comments, commentsRef, notices, noticesRef, notification;
           var ref = new Firebase(FBURL + '/songs/' + song_key);
@@ -1951,7 +1944,6 @@ A simple example service that returns some data.
             commentsRef = new Firebase(FBURL + 'songs/' + song.$id + '/comments');
             comments = $firebaseArray(commentsRef);
             comments.$add(comment);
-            console.log(comment);
             noticesRef = new Firebase(FBURL + 'notices/' + song.artist.key);
             notices = $firebaseArray(noticesRef);
             notification = {};
@@ -1975,7 +1967,6 @@ A simple example service that returns some data.
            var keysOfSongs = Object.keys(collabObj.songs);
            for (var i= 0; i < keysOfSongs.length; i++){
             var songToComment = collabObj.songs[keyesOfSongs[i]];
-              console.log(songToComment, ' commenting on this song');
               promises.push(commentOnCollabSong(songToComment, comment));
            }
            return Promise.all(promises)
@@ -2060,7 +2051,6 @@ A simple example service that returns some data.
            var keysOfSongs = Object.keys(collabObj.songs);
            for (var i= 0; i < keysOfSongs.length; i++){
               var songToPush = collabObj.songs[keysOfSongs[i]];
-              console.log(songToPush, ' song to push');
               promises.push(CollaborationService.commentOnCollabSong(songToPush, comment));
            }
            return Promise.all(promises)
@@ -2071,7 +2061,6 @@ A simple example service that returns some data.
       },
       get: function(songId) {
         ref = new Firebase(FBURL + '/songs/' + songId);
-        console.log(ref);
         return $firebaseObject(ref);
       },
       getLimit: function(artistId, limit) {
@@ -2126,18 +2115,12 @@ A simple example service that returns some data.
     $scope.s3Bucket = TransmitService.s3Bucket();
     $scope.uiSelectActive = false;
     $scope.artists = ArtistService.all();
-    $scope.artists.$loaded(function(artistArr){
-          $scope.artists =  artistArr.filter(
-        artist =>  typeof(artist.alias) !== "undefined" );
-                for (var i = 0; i > $scope.artists.length; i++){
-        console.log($scope.artists[i].alias, ' artist name\n');
-      }
-
+    $scope.artists.$loaded(function(artistArr) {
+        $scope.artists =  artistArr.filter( artist =>  typeof(artist.alias) !== "undefined" );
     })
 
     // boilerplate for song item, should refactor
     $scope.isSongLast = function(collabSongs, song) {
-          console.log('is song last, ', collabSongs[collabSongs.length - 1].$value === song.$id);
       return collabSongs[collabSongs.length - 1].$value === song.$id;
     }
     
@@ -2169,7 +2152,6 @@ A simple example service that returns some data.
     $scope.revoke = function() {
       if ($scope.song) {
         return AccountService.remove_song($scope.song, function() {
-          console.log('remove song');
           return reset();
         });
       }
@@ -2184,7 +2166,7 @@ A simple example service that returns some data.
         song['timestamp'] = (new Date()).toISOString();
         song['artist_timestamp'] = artist.$id + '_' +  song.timestamp,
         song['$priority'] = -1 * Date.parse(song.timestamp);
-        console.log('collab key: ' , collab_key);
+        console.log('collaboration key: ' , collab_key);
         song['collaboration_id'] = collab_key;
         song['artist'] = {
         'alias': artist.alias || '',
@@ -2214,11 +2196,9 @@ A simple example service that returns some data.
                          if (err){
                           console.log('error setting author id', err);
                           return reject();}
-                         console.log("resolving as author");
                          return resolve();
                      });
                   } else {
-                    console.log("resolving as non artist");
                     return resolve();
                   }
                 });
@@ -2281,11 +2261,9 @@ A simple example service that returns some data.
              });
           })
           .then(function(){
-            console.log('hello in then');
             $scope.transmitted = true;
           })
           .catch(function(err){
-            console.log(err, ' error from if then');
             alert("An error occurred creating your upload. Please try again.");
           });
         });
@@ -2321,29 +2299,24 @@ A simple example service that returns some data.
         var newCollab = ref.push();
         newCollab.set({songs: 0});
         var id = newCollab.key();
-        console.log("added record with id " + id);
+        console.log("added collaboration record with id " + id);
         ref.child(id).once("value", function(data){
           var val = data.val();
-          console.log(val, ' why is this null');
         });
         return callback(id);
       
       },
-      // TODO need another transmit service which takes an artist object
-      // so we can update the counts as opposed to being reflexive
       transmit: function(song, callback) {
         var songs;
         songs = SongService.some();
         songs.$loaded(function() {
           return AccountService.refresh(function(me) {
             return songs.$add(song).then(function(new_ref) {
-              console.log('in callback of transmit');
               var new_id;
               new_id = new_ref.key();
               if (typeof me.songs === 'undefined') {
                 me.songs = {};
               }
-              console.log()
               me.songs[new_id] = true;
               me.last_transmission = new_id;
               me.$save().then(function(res) {
