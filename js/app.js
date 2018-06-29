@@ -1078,7 +1078,9 @@ A simple example service that returns some data.
 (function() {
   angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
     // TODO add a function to get collaboration from collaboration id
-    $scope.artist = ArtistService.get($stateParams.artistId);
+    $scope.artist = ArtistService.get($stateParams.artistId,function(){
+      $scope.loadMore();
+    });
     $scope.limit = 7;
     $scope.offset = 0;
     $scope.didReachEnd = false;
@@ -1173,12 +1175,12 @@ A simple example service that returns some data.
         });
         return artists;
       },
-      get: function(artistId) {
+      get: function(artistId,updated) {
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
-        artist.$watch((data,snapshot)=>{
-          console.log(data,snapshot,'data');
+        artist.$watch((data)=>{
+          updated(data);
         })
         return artist;
       },
@@ -2017,15 +2019,12 @@ A simple example service that returns some data.
       },
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
-        playlist = [];
-
         songsArray = this.getLimit(artistId, limit);
         songsArray.$loaded(function() {
-          angular.forEach(songsArray, function(value, key) {
-            playlist.push(value);
+          songsArray.$watch(function(data){
+            console.log(data);
           });
-
-          return callback(playlist);
+          return callback(songsArray);
         });
       }
     };
