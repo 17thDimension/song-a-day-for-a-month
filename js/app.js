@@ -2287,8 +2287,7 @@ A simple example service that returns some data.
           })
           .then(function(){
             console.log('hello in then');
-            $scope.transmitted = true;
-            location.reload();//not the prettiest solution, but hey it works
+            $scope.transmitted = true;          
           })
           .catch(function(err){
             console.log(err, ' error from if then');
