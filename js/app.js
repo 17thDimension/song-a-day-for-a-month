@@ -1177,8 +1177,8 @@ A simple example service that returns some data.
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
-        artist.$watch((data)=>{
-          console.log(data,'data');
+        artist.$watch((data,snapshot)=>{
+          console.log(data,snapshot,'data');
         })
         return artist;
       },
@@ -1489,6 +1489,7 @@ A simple example service that returns some data.
             sng = SongService.get(new_id);
             sng.$loaded(function() {
               return $scope.song = sng;
+            console.log('sent');
             });
             $scope.latestTransmission = song;
             $scope.transmitted = true;
@@ -2287,6 +2288,7 @@ A simple example service that returns some data.
           .then(function(){
             console.log('hello in then');
             $scope.transmitted = true;
+            location.reload();//not the prettiest solution, but hey it works
           })
           .catch(function(err){
             console.log(err, ' error from if then');
