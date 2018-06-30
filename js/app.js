@@ -633,6 +633,7 @@ A simple example service that returns some data.
     };
 
     $scope.getSongsFromCollab = function(collaboration) {
+      console.log($firebaseArray);
       if (collaboration) {
         var songsRef =  new Firebase(FBURL + 'collaboration_songs').child(collaboration).child('songs');
         return $firebaseArray(songsRef);
@@ -1172,10 +1173,13 @@ A simple example service that returns some data.
         });
         return artists;
       },
-      get: function(artistId) {
+      get: function(artistId,updated) {
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
+        artist.$watch((data)=>{
+          updated(data);
+        })
         return artist;
       },
       all: function() {
@@ -1484,6 +1488,7 @@ A simple example service that returns some data.
             sng = SongService.get(new_id);
             sng.$loaded(function() {
               return $scope.song = sng;
+            console.log('sent');
             });
             $scope.latestTransmission = song;
             $scope.transmitted = true;
@@ -2003,15 +2008,12 @@ A simple example service that returns some data.
       },
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
-        playlist = [];
-
         songsArray = this.getLimit(artistId, limit);
         songsArray.$loaded(function() {
-          angular.forEach(songsArray, function(value, key) {
-            playlist.push(value);
+          songsArray.$watch(function(data){
+            console.log(data);
           });
-
-          return callback(playlist);
+          return callback(songsArray);
         });
       }
     };
