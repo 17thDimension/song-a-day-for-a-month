@@ -760,6 +760,7 @@ A simple example service that returns some data.
                         var public_artist_ref = new Firebase(public_artist_uri);
                         public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
                           if (err) {reject();}
+                          console.log('we have removed the song and reduced song count');
                           resolve();
                         });
                       }, function(err) {
@@ -783,9 +784,6 @@ A simple example service that returns some data.
         last_song_uri = FBURL + '/artists/' + me.$id + '/last_transmission/';
         song_ref = new Firebase(song_uri);
         last_song_ref = new Firebase(last_song_uri);
-        song_ref.remove();
-        last_song_ref.remove();
-        song.$remove();
         delete me.songs[song.$id];
         var public_artist_uri = FBURL + '/public_artists/' + me.$id;
         var public_artist_ref = new Firebase(public_artist_uri);
@@ -808,16 +806,29 @@ A simple example service that returns some data.
             }
             return Promise.all(promises)
             .then(function(res) {
-               collab_ref.remove(function(err){
-                return cb();
-               });
+               collab_ref.remove();
+            })
+            .then(function(res) {
+               last_song_ref.remove();
+            })
+            .then(function(res) {
+               song.$remove();
+            })
+            .then(function(res) {
+              return cb();
             });
           } else {
             var objKeys = Object.keys(data.songs);
             for (var i=0; i< objKeys.length; i++) {
               if (data.songs[objKeys[i]] === song.$id) {
-                collab_songs_ref.child(objKeys[i]).remove(function(err){
-                    return cb();
+                collab_songs_ref.child(objKeys[i]).remove(function(err) {
+                    return last_song_ref.remove()
+                    .then(function(res) {
+                       song.$remove();
+                    })
+                    .then(function(res) {
+                      return cb();
+                    });
                 });
               }
             }
@@ -2145,6 +2156,7 @@ A simple example service that returns some data.
       media: {}
     };
     reset = function() {
+      console.log('reset');
       $scope.transmitted = false;
       $scope.ready = false;
       return $scope.song = false;
