@@ -1092,7 +1092,9 @@ A simple example service that returns some data.
 
 (function() {
   angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
-    $scope.artist = ArtistService.get($stateParams.artistId);
+    $scope.artist = ArtistService.get($stateParams.artistId,()=>{
+      $scope.loadMore();
+    });
     $scope.limit = 7;
     $scope.offset = 0;
     $scope.didReachEnd = false;
@@ -1184,13 +1186,11 @@ A simple example service that returns some data.
         });
         return artists;
       },
-      get: function(artistId,updated) {
+      get: function(artistId,updateCallback) {
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
-        artist.$watch((data)=>{
-          updated(data);
-        })
+        artist.$watch(updateCallback);
         return artist;
       },
       all: function() {
