@@ -1912,15 +1912,39 @@ A simple example service that returns some data.
       }
       return array;
     };
+
+    $scope.getFirstSongAndWaitToLoad = function(collab) {
+      return new Promise(function(resolve, reject) {
+        console.log(collab, ' cl');
+        var keys = Object.keys(collab.songs);
+        if (keys.length > 0) {
+          var sng = $scope.songForKey(collab.songs[keys[0]]);
+          sng.$loaded(function(data) {
+            return resolve(data);
+          }, function(Err) {
+            return reject(Err);
+          });
+        } else {
+          return resolve();
+        }
+      });
+    }
     return $scope.playAll = function() {
-      var i, len, ref, results, song;
+      var i, len, ref, song;
       ref = $scope.collab_songs;
-      results = [];
+      var promises = [];
       for (i = 0, len = ref.length; i < len; i++) {
-        song = ref[i];
-        results.push($scope.enQueue(song));
+        promises.push($scope.getFirstSongAndWaitToLoad(ref[i]));
       }
-      return results;
+      return Promise.all(promises).then(function(arr) {
+          var results  = [];
+          for (j = 0; j < arr.length; j++) {
+            if (arr[j]) {
+              results.push($scope.enQueue(arr[j]));
+            }
+          }
+          return results;
+      });
     };
   });
 
