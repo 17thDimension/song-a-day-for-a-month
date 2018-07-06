@@ -1892,10 +1892,18 @@ A simple example service that returns some data.
     });
     $scope.loadMore = function() {
       $scope.loading = true;
+      $scope.container = document.getElementById('songIndexContent');
+      $scope.top = $scope.container.scrollTop+0;
       return CollaborationService.more(function(songs) {
         $scope.collab_songs = songs;
         $scope.collab_songs.$loaded(function() {
-        return $scope.loading = false;
+        document.getElementById('indexContainer').style.visibility='hidden'
+        $scope.loading = false;
+        setTimeout(function() {
+          $scope.container.scrollTo(0,$scope.top);
+          document.getElementById('indexContainer').style.visibility='visible';
+        }, 10);
+
       });
       });
     };
