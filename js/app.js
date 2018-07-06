@@ -1190,7 +1190,10 @@ A simple example service that returns some data.
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
-        artist.$watch(updateCallback);
+        if(typeof updateCallback!='undefined'){
+          artist.$watch(updateCallback);
+        }
+
         return artist;
       },
       all: function() {
@@ -2019,12 +2022,13 @@ A simple example service that returns some data.
       },
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
         songsArray = this.getLimit(artistId, limit);
         songsArray.$loaded(function() {
-          songsArray.$watch(function(data){
-            console.log(data);
-          });
-          return callback(songsArray);
+          for (i = 0, len = songsInOrder.length; i < len; i++) {
+            playlist.push(song);          
+          }
+          return callback(playlist);
         });
       }
     };
