@@ -1003,7 +1003,10 @@ A simple example service that returns some data.
       return ctrl.playlist = [];
     };
     $rootScope.enQueue = function(song) {
-      if (_(ctrl.playlist).includes(song)) {
+      var duplicates = ctrl.playlist.filter((playlistSong)=>{
+        return playlistSong.$id===song.$id
+      });
+      if (duplicates.length!=0) {
         return;
       }
       ctrl.playlist.push(song);
