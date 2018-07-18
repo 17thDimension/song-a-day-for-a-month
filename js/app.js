@@ -1003,7 +1003,10 @@ A simple example service that returns some data.
       return ctrl.playlist = [];
     };
     $rootScope.enQueue = function(song) {
-      if (_(ctrl.playlist).includes(song)) {
+      var duplicates = ctrl.playlist.filter((playlistSong)=>{
+        return playlistSong.$id===song.$id
+      });
+      if (duplicates.length!=0) {
         return;
       }
       ctrl.playlist.push(song);
@@ -1092,7 +1095,9 @@ A simple example service that returns some data.
 
 (function() {
   angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, Auth, $firebaseArray, FBURL) {
-    $scope.artist = ArtistService.get($stateParams.artistId);
+    $scope.artist = ArtistService.get($stateParams.artistId,()=>{
+      $scope.loadMore();
+    });
     $scope.limit = 7;
     $scope.offset = 0;
     $scope.didReachEnd = false;
@@ -1184,13 +1189,14 @@ A simple example service that returns some data.
         });
         return artists;
       },
-      get: function(artistId,updated) {
+      get: function(artistId,updateCallback) {
         var artist;
         ref = new Firebase(FBURL + '/artists/' + artistId);
         artist = $firebaseObject(ref);
-        artist.$watch((data)=>{
-          updated(data);
-        })
+        if(typeof updateCallback!='undefined'){
+          artist.$watch(updateCallback);
+        }
+
         return artist;
       },
       all: function() {
@@ -1889,10 +1895,18 @@ A simple example service that returns some data.
     });
     $scope.loadMore = function() {
       $scope.loading = true;
+      $scope.container = document.getElementById('songIndexContent');
+      $scope.top = $scope.container.scrollTop+0;
       return CollaborationService.more(function(songs) {
         $scope.collab_songs = songs;
         $scope.collab_songs.$loaded(function() {
-        return $scope.loading = false;
+        document.getElementById('indexContainer').style.visibility='hidden'
+        $scope.loading = false;
+        setTimeout(function() {
+          $scope.container.scrollTo(0,$scope.top);
+          document.getElementById('indexContainer').style.visibility='visible';
+        }, 10);
+
       });
       });
     };
@@ -2043,12 +2057,13 @@ A simple example service that returns some data.
       },
       getListWithLimit: function(limit, artistId, callback) {
         var i, len, playlist, song, songId, songsInOrder;
+        playlist = [];
         songsArray = this.getLimit(artistId, limit);
         songsArray.$loaded(function() {
-          songsArray.$watch(function(data){
-            console.log(data);
-          });
-          return callback(songsArray);
+          for (i = 0, len = songsInOrder.length; i < len; i++) {
+            playlist.push(song);          
+          }
+          return callback(playlist);
         });
       }
     };
