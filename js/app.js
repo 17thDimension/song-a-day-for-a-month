@@ -598,7 +598,7 @@ angular.module('songaday').directive('myUiSelect', function() {
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, FBURL, $firebaseArray, AccountService, SongService, TransmitService) {
+  angular.module("songaday").controller("AccountCtrl", function($scope, $stateParams, $firebaseArray, AccountService, SongService, TransmitService) {
     console.log('ACCOUNT');
     $scope.limit = 7;
     $scope.offset = 0;
@@ -675,7 +675,7 @@ A simple example service that returns some data.
  */
 
 (function() {
-  angular.module("songaday").factory("AccountService", function($rootScope, $firebaseArray, $firebaseObject, $firebaseAuth, FBURL) {
+  angular.module("songaday").factory("AccountService", function($rootScope, $firebaseArray, $firebaseObject, $firebaseAuth) {
     var loading, me, ref, service;
     ref = GLOBALS.FIREBASE_REF;
     loading = true;
@@ -1085,7 +1085,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, $firebaseAuth, $firebaseArray, FBURL) {
+  angular.module("songaday").controller("ArtistDetailCtrl", function($scope, $stateParams, SongService, ArtistService, $firebaseAuth, $firebaseArray) {
     $scope.artist = ArtistService.get($stateParams.artistId,()=>{
       $scope.loadMore();
     });
@@ -1171,7 +1171,7 @@ A simple example service that returns some data.
  */
 
 (function() {
-  angular.module("songaday").factory("ArtistService", function($firebaseObject, $firebaseArray, FBURL) {
+  angular.module("songaday").factory("ArtistService", function($firebaseObject, $firebaseArray) {
     var artists, ref;
     ref = GLOBALS.FIREBASE_REF.child( '/public_artists').orderByPriority();
     this.loading = true;
@@ -1214,7 +1214,7 @@ A simple example service that returns some data.
  */
 
 (function() {
-  angular.module("songaday").factory("BetaService", function($firebaseArray, Auth, FBURL) {
+  angular.module("songaday").factory("BetaService", function($firebaseArray, $firebaseAuth) {
     var ref;
     ref = GLOBALS.FIREBASE_REF.child( 'beta');
     return {
@@ -1222,10 +1222,10 @@ A simple example service that returns some data.
         console.log('MASD');
         return $firebaseAuth().$waitForSignIn().then(function(authObject) {
           var betas;
-          if (typeof authObject.google.email !== 'undefined') {
+          if (typeof authObject.providerData[0].email !== 'undefined') {
             betas = $firebaseArray(ref);
             console.log('MASD');
-            betas.$add(authObject.google.email);
+            betas.$add(authObject.providerData[0].email);
             betas.$save();
             return alert('Check your' + authObject.google.email + ' email tommorow ;)');
           }
@@ -1252,7 +1252,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").factory("ListenService", function(FBURL, $firebaseObject) {
+  angular.module("songaday").factory("ListenService", function($firebaseObject) {
     var ref;
     ref = GLOBALS.FIREBASE_REF.child( 'listens');
     return {
@@ -1385,7 +1385,7 @@ A simple example service that returns some data.
  */
 
 (function() {
-  angular.module("songaday").factory("PlaylistService", function($firebaseObject, $firebaseArray, SongService, FBURL) {
+  angular.module("songaday").factory("PlaylistService", function($firebaseObject, $firebaseArray, SongService) {
     var limit, playlists, ref;
     limit = 7;
     ref = GLOBALS.FIREBASE_REF.child('playlists');
@@ -1849,7 +1849,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading, FBURL, $firebaseArray) {
+  angular.module("songaday").controller("SongDetailCtrl", function($scope, $stateParams, SongService, $ionicLoading, $firebaseArray) {
     // TODO boilerplate for song item, should refactor
     $scope.isSongLast = function(collabSongs, song) {
       return collabSongs[collabSongs.length - 1].$value === song.$id;
@@ -1959,7 +1959,7 @@ A simple example service that returns some data.
 
 
 (function() {
-  angular.module("songaday").factory("CollaborationService", function($firebaseObject, $firebaseArray, AccountService, FBURL) {
+  angular.module("songaday").factory("CollaborationService", function($firebaseObject, $firebaseArray, AccountService) {
     var limit, ref, scroll, scrollRef, songs;
     limit = 7;
     var offset = 1;
