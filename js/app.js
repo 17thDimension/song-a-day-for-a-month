@@ -43,7 +43,7 @@
 (function() {
   var app;
 
-  window.app = angular.module(GLOBALS.ANGULAR_APP_NAME, [GLOBALS.ANGULAR_APP_NAME + ".templates", "ionic",  "firebase",'ngRoute', "angularMoment", "ngS3upload", "com.2fdevs.videogular", "com.2fdevs.videogular.plugins.buffering", "angular-scroll-complete", "ui.select", "ngSanitize"]).constant('FBURL', 'https://song-a-day.firebaseio.com/');
+  window.app = angular.module(GLOBALS.ANGULAR_APP_NAME, [GLOBALS.ANGULAR_APP_NAME + ".templates", "ionic",  "firebase",'ngRoute', "angularMoment", "ngS3upload", "com.2fdevs.videogular", "com.2fdevs.videogular.plugins.buffering", "angular-scroll-complete", "ui.select", "ngSanitize"])
 
 }).call(this);
 
@@ -731,8 +731,8 @@ A simple example service that returns some data.
             artist.$loaded(function(artist) {
               // Note: this assumes that the collaboration song is being handled outside this function
               var last_song_ref, last_song_uri, song_ref, song_uri, collaboration_id, collab_ref, song_key;
-              song_uri = FBURL + 'artists/' + artist.$id + '/songs/' + song.$id;
-              last_song_uri = FBURL + 'artists/' + artist.$id + '/last_transmission/';
+              song_uri = 'artists/' + artist.$id + '/songs/' + song.$id;
+              last_song_uri = 'artists/' + artist.$id + '/last_transmission/';
               console.log(song_uri);
               song_ref = GLOBALS.FIREBASE_REF.child(song_uri);
               last_song_ref = GLOBALS.FIREBASE_REF.child(last_song_uri);
@@ -747,7 +747,7 @@ A simple example service that returns some data.
                   song.$remove().then(function(ref) {
                       delete artist.songs[song.$id]; 
                       artist.$save().then(function(ref) {
-                        var public_artist_uri = FBURL + '/public_artists/' + artist.$id;
+                        var public_artist_uri =  '/public_artists/' + artist.$id;
                         var public_artist_ref = GLOBALS.FIREBASE_REF.child(public_artist_uri);
                         public_artist_ref.child('songCount').set(Object.keys(artist.songs).length, function(err){
                           if (err) {reject();}
@@ -2070,7 +2070,7 @@ A simple example service that returns some data.
  */
 
 (function() {
-  angular.module("songaday").factory("SongService", function($firebaseObject, CollaborationService, $firebaseArray, AccountService, FBURL) {
+  angular.module("songaday").factory("SongService", function($firebaseObject, CollaborationService, $firebaseArray, AccountService) {
     var limit, ref, scroll, scrollRef, songs;
     limit = 7;
     ref = GLOBALS.FIREBASE_REF.child( 'songs');
@@ -2151,7 +2151,7 @@ A simple example service that returns some data.
 }).call(this);
 
 (function() {
-  angular.module("songaday").controller("TransmitCtrl", function($scope, SongService, TransmitService, $state, $timeout, CollaborationService, AccountService, ArtistService, FBURL, $firebaseArray, $firebaseObject) {
+  angular.module("songaday").controller("TransmitCtrl", function($scope, SongService, TransmitService, $state, $timeout, CollaborationService, AccountService, ArtistService, $firebaseArray, $firebaseObject) {
     var reset;
     $scope.awsParamsURI = TransmitService.awsParamsURI();
     $scope.awsFolder = TransmitService.awsFolder();
@@ -2322,7 +2322,7 @@ A simple example service that returns some data.
  */
 
 (function() {
-  angular.module("songaday").factory("TransmitService", function($rootScope, $firebaseObject, $firebaseArray, FBURL, S3Uploader, ngS3Config, SongService, AccountService) {
+  angular.module("songaday").factory("TransmitService", function($rootScope, $firebaseObject, $firebaseArray, S3Uploader, ngS3Config, SongService, AccountService) {
     var ref;
     ref =GLOBALS.FIREBASE_REF.child( 'songs')
     return {
