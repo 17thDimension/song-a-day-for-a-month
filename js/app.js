@@ -618,9 +618,8 @@ angular.module('songaday').directive('myUiSelect', function() {
     };
 
     $scope.getSongsFromCollab = function(collaboration) {
-      console.log($firebaseArray);
       if (collaboration) {
-        var songsRef =  GLOBALS.ROOT_REF.child('collaboration_songs').child(collaboration).child('songs');
+        var songsRef =  GLOBALS.FIREBASE_REF.child('collaboration_songs').child(collaboration).child('songs');
         return $firebaseArray(songsRef);
       }
     };
@@ -691,6 +690,7 @@ A simple example service that returns some data.
         return $firebaseAuth().$waitForSignIn().then(function(authObject) {
           console.log(authObject)
           var my_id;
+          console.log(authObject);
           if (authObject === null || typeof authObject.providerData === 'undefined') {
             console.log("NOT LOGGED IN");
             return;
@@ -731,8 +731,9 @@ A simple example service that returns some data.
             artist.$loaded(function(artist) {
               // Note: this assumes that the collaboration song is being handled outside this function
               var last_song_ref, last_song_uri, song_ref, song_uri, collaboration_id, collab_ref, song_key;
-              song_uri = FBURL + '/artists/' + artist.$id + '/songs/' + song.$id;
-              last_song_uri = FBURL + '/artists/' + artist.$id + '/last_transmission/';
+              song_uri = FBURL + 'artists/' + artist.$id + '/songs/' + song.$id;
+              last_song_uri = FBURL + 'artists/' + artist.$id + '/last_transmission/';
+              console.log(song_uri);
               song_ref = GLOBALS.FIREBASE_REF.child(song_uri);
               last_song_ref = GLOBALS.FIREBASE_REF.child(last_song_uri);
               song_ref.remove(function(err) {
@@ -770,12 +771,13 @@ A simple example service that returns some data.
         var accountService = this;
         var last_song_ref, last_song_uri, song_ref, song_uri, collaboration_id, collab_ref, song_key;
         collaboration_id = song.collaboration_id;
-        song_uri = FBURL + '/artists/' + me.$id + '/songs/' + song.$id;
-        last_song_uri = FBURL + '/artists/' + me.$id + '/last_transmission/';
+        song_uri = '/artists/' + me.$id + '/songs/' + song.$id;
+        last_song_uri ='/artists/' + me.$id + '/last_transmission/';
+        console.log(song_uri);
         song_ref = GLOBALS.FIREBASE_REF.child(song_uri);
         last_song_ref = GLOBALS.FIREBASE_REF.child(last_song_uri);
         delete me.songs[song.$id];
-        var public_artist_uri = FBURL + '/public_artists/' + me.$id;
+        var public_artist_uri = '/public_artists/' + me.$id;
         var public_artist_ref = GLOBALS.FIREBASE_REF.child(public_artist_uri);
         public_artist_ref.child('songCount').set(Object.keys(me.songs).length);
         collab_ref = GLOBALS.FIREBASE_REF.child('collaboration_songs').child(collaboration_id);
@@ -835,6 +837,7 @@ provider.addScope("email");
 
 return $firebaseAuth().$signInWithPopup(provider).then((function(authObject) {
   var my_id;
+  console.log(authObject);
   my_id = CryptoJS.SHA1(authObject.providerData[0].email).toString().substring(0, 11);
   me = $firebaseObject(ref.child('artists/' + my_id));
 }), function(error) {
@@ -1114,8 +1117,11 @@ A simple example service that returns some data.
     };
 
     $scope.getSongsFromCollab = function(collaboration) {
+      console.log(collaboration,'collab');
       if (collaboration) {
-        var songsRef =  GLOBALS.FIREBASE_REF.child( 'collaboration_songs').child(collaboration).child('songs');
+        var collabRef =  GLOBALS.FIREBASE_REF.child( 'collaboration_songs').child(collaboration)
+        console.log(collabRef);
+        var songsRef = collabRef.child('songs');
         return $firebaseArray(songsRef);
       }
     };
