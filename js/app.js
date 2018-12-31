@@ -2074,7 +2074,7 @@ A simple example service that returns some data.
     var limit, ref, scroll, scrollRef, songs;
     limit = 7;
     ref = GLOBALS.FIREBASE_REF.child( 'songs');
-    songs = $firebaseArray(ref);
+    songs = $firebaseArray(ref.limitToLast(limit));
     return {
       some: function() {
         this.more();
@@ -2086,7 +2086,7 @@ A simple example service that returns some data.
         }
       },
       comment: function(song, comment) {
-        var collabRef =GLOBALS.FIREBASE_REF.child( 'collaboration_songs/' + song.collaboration_id);
+        var collabRef =GLOBALS.FIREBASE_REF.child( 'collaboration_so  ngs/' + song.collaboration_id);
         var collabObj = $firebaseObject(collabRef);
         var promises = [];
         collabObj.$loaded().then(function() {
