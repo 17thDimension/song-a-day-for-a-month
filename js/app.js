@@ -688,14 +688,19 @@ A simple example service that returns some data.
       },
       refresh: function(cb) {
         return $firebaseAuth().$waitForSignIn().then(function(authObject) {
-          console.log(authObject)
+          console.log('est',authObject.uid)
           var my_id;
-          console.log(authObject);
           if (authObject === null || typeof authObject.providerData === 'undefined') {
             console.log("NOT LOGGED IN");
             return;
           }
-          my_id = CryptoJS.SHA1(authObject.providerData[0].email).toString().substring(0, 11);
+          var email = '' 
+          if (authObject.user){
+            email = authObject.user.providerData[0].email 
+          }else{
+            email = authObject.providerData[0].email
+          }
+          my_id = CryptoJS.SHA1(email).toString().substring(0, 11);
           console.log(my_id);
           me = $firebaseObject(ref.child('artists/' + my_id));
           me.$loaded(function() {
@@ -704,8 +709,7 @@ A simple example service that returns some data.
               ref.child('artists').child(my_id).child('user_id').set(authObject.uid);
             }
             if (!me['email']) {
-              console.log(authObject.providerData[0],'email')
-              return ref.child('artists').child(my_id).child('email').set(authObject.providerData[0].email);
+              return ref.child('artists').child(my_id).child('email').set(email);
             }
           });
           $rootScope.notifications = $firebaseArray(ref.child('notices/' + my_id));
@@ -833,13 +837,18 @@ A simple example service that returns some data.
       },
       login: function() {
         var provider = new firebase.auth.GoogleAuthProvider();
-provider.addScope("email");
-
-return $firebaseAuth().$signInWithPopup(provider).then((function(authObject) {
-  var my_id;
-  console.log(authObject);
-  my_id = CryptoJS.SHA1(authObject.providerData[0].email).toString().substring(0, 11);
-  me = $firebaseObject(ref.child('artists/' + my_id));
+        provider.addScope("email");
+        return $firebaseAuth().$signInWithPopup(provider).then((function(authObject) {
+        var my_id;
+        console.log(authObject);
+        var email;
+        if (authObject.providerData){
+          email = authObject.providerData[0].email;
+        }else{
+          email = authObject.user.providerData[0].email;
+        }
+        my_id = CryptoJS.SHA1(email).toString().substring(0, 11);
+        me = $firebaseObject(ref.child('artists/' + my_id));
 }), function(error) {
   console.log(error);
 });;
