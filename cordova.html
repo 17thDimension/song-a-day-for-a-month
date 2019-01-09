@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, width=device-width, minimal-ui">
+    <title>Song A Day</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white-translucent">
+    <link href="css/app.css?v=1436240694370" rel="stylesheet">
+    <meta property="og:title" content="Song A Day">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="http://sadfam.com/img/song-a-day.png">
+    <meta property="og:description" content="a Song a Day is fun to play">
+    <link rel="icon" type="image/png" href="img/favicon.png">
+    <link rel="stylesheet" href="css/ui-select.css" />
+    <link rel="apple-touch-icon" href="img/favicon.png">
+      <script>
+    GLOBALS = {"ANGULAR_APP_NAME":"songaday","BUNDLE_NAME":"SongADay","BUNDLE_VERSION":"3.4.0","CODE_VERSION":"644ffa27f7be8fab1ff28049f23d4d33be155463","DEPLOY_TIME":1436240694370,"ENV":"development","ROLLBAR_SOURCEMAPS_URL_PREFIX":"https://songadayforamonth.com","WEINRE_ADDRESS":"192.168.1.17:31173"};
+    </script>
+
+    <script src="js/application_bundle.js"></script>
+
+    <script src="js/videogular.js?v=jamuary2019-1-1"></script>
+    <script src="js/ngs3Upload.js?v=jamuary2019-1-1"></script>
+    <script src="js/angular-moment-bundle.js"></script>
+    <script src="js/angular-scroll-complete.js"></script>
+    <script src="js/crypto.js"></script>
+    <script src="js/app_templates.js?v=jamuary2019-1-1"></script>
+    <script src="js/app.js?v=jamuary2019-1-7"></script>
+    <script src="cordova.js"></script>
+    <script src="cordova_plugins.js"></script>
+    <script src="js/cordova_interface.js"></script>
+  </head>
+  <body ng-controller="AppCtrl as ctrl" ng-cloak>
+    <videogular vg-player-ready="ctrl.onPlayerReady($API)" vg-complete="ctrl.next()" class="cinema">
+      <vg-media vg-use-native-controls="true" vg-src="ctrl.config.sources" vg-type="video" vg-auto-play="true">             </vg-media>
+      <progress max="{{ctrl.API.totalTime}}" value="{{ctrl.API.currentTime}}" class="song-position"></progress>
+      <canvas id="visualizer" width="1000" height="200"></canvas>
+    </videogular>
+    <ion-nav-view></ion-nav-view>
+    <ion-footer-bar align-title="center" ng-click="ctrl.setNewPosition($event)">
+      <div ng-show="ctrl.playlist.length" class="buttons left">
+        <button ng-click="toggleLeft()" class="button button-icon icon ion-music-note"></button>
+        <button ng-bind="ctrl.nowPlaying.title" ng-click="showSong(ctrl.nowPlaying)" class="button button-light song-title">  </button>
+      </div>
+
+      <div class="title">
+        <!--<a href="#/record" class="button button-icon ion-button ion-mic-c"></a>-->
+      </div>
+      <div ng-show="ctrl.playlist.length" class="buttons right">
+        <button ng-bind="ctrl.nowPlaying.artist.alias" ng-click="showArtist(ctrl.nowPlaying.artist.key)" class="button button-light song-alias"></button>
+      </div>
+    </ion-footer-bar>
+  </body>
+</html>
