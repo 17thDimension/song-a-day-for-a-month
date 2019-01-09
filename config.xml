@@ -30,10 +30,10 @@
 
     <!-- We will hide the splashscreen manually by JS when the app gets loaded -->
     <preference name="SplashScreen" value="screen" />
-    <preference name="SplashScreenDelay" value="20000" />
+    <preference name="SplashScreenDelay" value="2000" />
 
     <!-- Fix error with "error while loading asset index.html" -->
-    <preference name="LoadUrlTimeoutValue" value="70000" />
+    <preference name="LoadUrlTimeoutValue" value="7000" />
 
     <!-- Plugin configuration: https://github.com/driftyco/ionic-plugins-keyboard -->
     <feature name="Keyboard">
